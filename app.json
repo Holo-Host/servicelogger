@@ -1,0 +1,14 @@
+{
+  "name": "ServiceLogger",
+  "description": "Holo Service Logger",
+  "authors": [
+    {
+      "identifier": "Julio Monteiro <julio.monteiro@holo.host>",
+      "public_key_source": "",
+      "signature": ""
+    }
+  ],
+  "version": "0.1.0",
+  "dht": {},
+  "properties": null
+}
