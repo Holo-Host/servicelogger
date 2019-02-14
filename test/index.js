@@ -1,51 +1,56 @@
-// // This test file uses the tape testing framework.
-// // To learn more, go here: https://github.com/substack/tape
-// const test = require('tape');
-
-// const { Config, Conductor } = require("@holochain/holochain-nodejs")
-
-// const dnaPath = "./dist/bundle.json"
-
-// // closure to keep config-only stuff out of test scope
-// const conductor = (() => {
-//     const agentAlice = Config.agent("alice")
-
-//     const dna = Config.dna(dnaPath)
-
-//     const instanceAlice = Config.instance(agentAlice, dna)
-
-//     const conductorConfig = Config.conductor([instanceAlice])
-//     return new Conductor(conductorConfig)
-// })()
-
-// // Initialize the Conductor
-// conductor.start()
-
-// const alice = conductor.makeCaller('alice', dnaPath)
-
 const path = require('path')
 const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
 Scenario.setTape(require('tape'))
 
 const dnaPath = path.join(__dirname, "../dist/bundle.json")
 const dna = Config.dna(dnaPath, 'servicelogger')
-const agentAlice = Config.agent("alice")
+const agentApp = Config.agent("app")
 
-const instanceAlice = Config.instance(agentAlice, dna)
+const instanceApp = Config.instance(agentApp, dna)
 
-const scenario = new Scenario([instanceAlice])
+const scenario = new Scenario([instanceApp])
 
-scenario.runTape('agentId', async (t, { alice }) => {
-  t.ok(alice.agentId)
+// Basic agentId check
+scenario.runTape('agentId', async (t, { app }) => {
+  t.ok(app.agentId)
 })
 
-scenario.runTape('example', async (t, { alice }) => {
-  // Make a call to a Zome function
-  // indicating the capability and function, and passing it an input
-  const addr = alice.call("service", "create_request", {"entry" : {"content":"sample content"}})
+const payment_prefs = {
+  provider_address: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
+  dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
+  max_fuel_per_invoice: 1.0,
+  max_unpaid_value: 2.0,
+}
 
-  const result = alice.call("service", "get_request", {"address": addr.Ok})
+// 1. The ServiceLog has been initiated, now it requires: PaymentPrefs and a dna_bundle_hash to be set
+scenario.runTape('can do initial setup', async (t, { app }) => {
+  const addr = app.call("service", "set_payment_prefs", {"entry" : payment_prefs})
 
-  // check for equality of the actual and expected results
-  t.deepEqual(result, { Ok: { App: [ 'client_request', '{"content":"sample content"}' ] } })
+  t.ok(addr.Ok, "Address is set")
 })
+
+// 2. The client starts a new request for hosting, based on a call from the HC Interceptor
+scenario.runTape('can log a client request', async (t, { app }) => {
+  const sample_request = {
+    agent_id: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
+    zome_call_spec: "blog/create_post",
+    dna_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
+    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk",
+  }
+
+  const addr = app.call("service", "log_request", {"entry" : sample_request})
+
+  const result = app.call("service", "get_request", {"address": addr.Ok})
+
+  t.deepEqual(result, { Ok: { App: [ 'client_request', JSON.stringify(sample_request) ] } })
+})
+
+// 3. The Conductor wants to record a HostResponse, indicating some hosting was done
+
+// 4. With the client signature on that HostResponse, the Conductor creates a ServiceLog, that is a billable log
+
+// 5. On the UI, list all billable ServiceLogs, filter by start and end time (for pagination)
+
+// 6. Generate an invoice based on the selected ServiceLogs
+
+// 7. Checks if the unpaid value is greater than the PaymentPrefs, then call stop_hosting() on Hosting App
