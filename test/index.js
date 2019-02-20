@@ -40,7 +40,16 @@ const sample_response = {
   host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
 }
 
-
+const sample_response2 = {
+  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
+  hosting_stats: {
+    cpu_seconds: 3.3,
+    bytes_in: 4332,
+    bytes_out: 7352,
+  },
+  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
+  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+}
 
 // 1. The ServiceLog has been initiated, now it requires: PaymentPrefs and a dna_bundle_hash to be set
 scenario.runTape('can do initial setup', async (t, { app }) => {
@@ -80,29 +89,18 @@ scenario.runTape('can log a host response', async (t, { app }) => {
 scenario.runTape('can create a servicelog', async (t, { app }) => {
   app.call("service", "set_payment_prefs", {"entry" : payment_prefs})
 
-  const addr = app.call("service", "log_request", {"entry" : sample_request})
+  app.call("service", "log_request", {"entry" : sample_request})
 
-  const response = {
-    request_hash: "aaa",
-    hosting_stats: {
-      cpu_seconds: 3.2,
-      bytes_in: 12309,
-      bytes_out: 7352,
-    },
-    response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-    host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
-  }
-
-  const addr2 = app.call("service", "log_response", {"entry" : sample_response})
+  const addr = app.call("service", "log_response", {"entry" : sample_response})
 
   const service_log = {
-    response_hash: addr2.Ok,
+    response_hash: addr.Ok,
     client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
   }
 
-  const addr3 = app.call("service", "log_service", {"entry": service_log})
+  const addr2 = app.call("service", "log_service", {"entry": service_log})
 
-  const result = app.call("service", "get_service", {"address": addr3.Ok})
+  const result = app.call("service", "get_service", {"address": addr2.Ok})
 
   t.deepEqual(result, { Ok: { App: [ 'service_log', JSON.stringify(service_log) ] } })
 })

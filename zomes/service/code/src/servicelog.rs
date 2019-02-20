@@ -32,12 +32,13 @@ pub fn service_log_definition() -> ValidatingEntryType {
         },
 
         validation: |_my_entry: ServiceLog, _validation_data: hdk::ValidationData| {
+            // TODO: validate if payment_prefs is set
+            // TODO: validate is the response exists and signature is valid
             Ok(())
         }
     )
 }
 
-// TODO: disallow logging requests if payment prefs not set
 pub fn handle_log_service(entry: ServiceLog) -> ZomeApiResult<Address> {
     let entry = Entry::App("service_log".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;

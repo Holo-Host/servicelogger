@@ -35,12 +35,12 @@ pub fn client_request_definition() -> ValidatingEntryType {
         },
 
         validation: |_my_entry: ClientRequest, _validation_data: hdk::ValidationData| {
+            // TODO: validate if payment_prefs is set
             Ok(())
         }
     )
 }
 
-// TODO: disallow logging requests if payment prefs not set
 pub fn handle_log_request(entry: ClientRequest) -> ZomeApiResult<Address> {
     let entry = Entry::App("client_request".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
