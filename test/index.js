@@ -29,6 +29,18 @@ const sample_request = {
   client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk",
 }
 
+const sample_response = {
+  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
+  hosting_stats: {
+    cpu_seconds: 3.2,
+    bytes_in: 12309,
+    bytes_out: 7352,
+  },
+  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
+  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+}
+
+
 
 // 1. The ServiceLog has been initiated, now it requires: PaymentPrefs and a dna_bundle_hash to be set
 scenario.runTape('can do initial setup', async (t, { app }) => {
@@ -55,22 +67,13 @@ scenario.runTape('can log a host response', async (t, { app }) => {
 
   const addr = app.call("service", "log_request", {"entry" : sample_request})
 
-  const response = {
-    request_hash: addr.Ok,
-    hosting_stats: {
-      cpu_seconds: 3.2,
-      bytes_in: 12309,
-      bytes_out: 7352,
-    },
-    response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-    host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
-  }
+  t.deepEqual(addr.Ok, "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4")
 
-  const addr2 = app.call("service", "log_response", {"entry" : response})
+  const addr2 = app.call("service", "log_response", {"entry" : sample_response})
 
   const result = app.call("service", "get_response", {"address": addr2.Ok})
 
-  t.deepEqual(result, { Ok: { App: [ 'host_response', JSON.stringify(response) ] } })
+  t.deepEqual(result, { Ok: { App: [ 'host_response', JSON.stringify(sample_response) ] } })
 })
 
 // 4. With the client signature on that HostResponse, the Conductor creates a ServiceLog, that is a billable log
@@ -80,7 +83,7 @@ scenario.runTape('can create a servicelog', async (t, { app }) => {
   const addr = app.call("service", "log_request", {"entry" : sample_request})
 
   const response = {
-    request_hash: addr.Ok,
+    request_hash: "aaa",
     hosting_stats: {
       cpu_seconds: 3.2,
       bytes_in: 12309,
@@ -90,7 +93,7 @@ scenario.runTape('can create a servicelog', async (t, { app }) => {
     host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
   }
 
-  const addr2 = app.call("service", "log_response", {"entry" : response})
+  const addr2 = app.call("service", "log_response", {"entry" : sample_response})
 
   const service_log = {
     response_hash: addr2.Ok,
