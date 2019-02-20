@@ -26,7 +26,8 @@ define_zome! {
     entries: [
         setup::payment_prefs_definition(),
         request::client_request_definition(),
-        response::host_response_definition()
+        response::host_response_definition(),
+        servicelog::service_log_definition()
     ]
 
     genesis: || { Ok(()) }
@@ -57,9 +58,19 @@ define_zome! {
             outputs: |result: ZomeApiResult<Option<Entry>>|,
             handler: response::handle_get_response
         }
+        log_service: {
+            inputs: |entry: servicelog::ServiceLog|,
+            outputs: |result: ZomeApiResult<Address>|,
+            handler: servicelog::handle_log_service
+        }
+        get_service: {
+            inputs: |address: Address|,
+            outputs: |result: ZomeApiResult<Option<Entry>>|,
+            handler: servicelog::handle_get_service
+        }
     ]
 
     capabilities: {
-        public (Public) [set_payment_prefs, log_request, get_request, log_response, get_response]
+        public (Public) [set_payment_prefs, log_request, get_request, log_response, get_response, log_service, get_service]
     }
 }
