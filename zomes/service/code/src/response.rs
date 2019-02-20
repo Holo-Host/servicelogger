@@ -41,12 +41,13 @@ pub fn host_response_definition() -> ValidatingEntryType {
         },
 
         validation: |_my_entry: HostResponse, _validation_data: hdk::ValidationData| {
+            // TODO: validate if payment_prefs is set
+            // TODO: validate is the request exists and signature is valid
             Ok(())
         }
     )
 }
 
-// TODO: disallow logging requests if payment prefs not set
 pub fn handle_log_response(entry: HostResponse) -> ZomeApiResult<Address> {
     let entry = Entry::App("host_response".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
