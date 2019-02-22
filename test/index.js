@@ -29,7 +29,7 @@ const sample_request = {
   client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk",
 }
 
-const sample_response = {
+const sample_response1 = {
   request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
   hosting_stats: {
     cpu_seconds: 3.2,
@@ -55,7 +55,7 @@ const sample_response2 = {
 scenario.runTape('can do initial setup', async (t, { app }) => {
   const addr = app.call("service", "set_payment_prefs", {"entry" : payment_prefs})
 
-  t.ok(addr.Ok, "Address is set")
+  t.ok(addr.Ok, "Paument prefs are set")
 })
 
 // 2. The client starts a new request for hosting, based on a call from the HC Interceptor
@@ -64,25 +64,35 @@ scenario.runTape('can log a client request', async (t, { app }) => {
 
   const addr = app.call("service", "log_request", {"entry" : sample_request})
 
+  t.deepEqual(addr.Ok, "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4")
+
   const result = app.call("service", "get_request", {"address": addr.Ok})
 
   t.deepEqual(result, { Ok: { App: [ 'client_request', JSON.stringify(sample_request) ] } })
 })
 
 // 3. The Conductor wants to record a HostResponse, indicating some hosting was done
-
 scenario.runTape('can log a host response', async (t, { app }) => {
   app.call("service", "set_payment_prefs", {"entry" : payment_prefs})
 
-  const addr = app.call("service", "log_request", {"entry" : sample_request})
+  const request_addr = app.call("service", "log_request", {"entry" : sample_request})
 
-  t.deepEqual(addr.Ok, "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4")
+  const response = {
+    request_hash: request_addr.Ok,
+    hosting_stats: {
+      cpu_seconds: 3.2,
+      bytes_in: 12309,
+      bytes_out: 7352,
+    },
+    response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
+    host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+  }
 
-  const addr2 = app.call("service", "log_response", {"entry" : sample_response})
+  const addr = app.call("service", "log_response", {"entry" : response})
 
-  const result = app.call("service", "get_response", {"address": addr2.Ok})
+  const result = app.call("service", "get_response", {"address": addr.Ok})
 
-  t.deepEqual(result, { Ok: { App: [ 'host_response', JSON.stringify(sample_response) ] } })
+  t.deepEqual(result, { Ok: { App: [ 'host_response', JSON.stringify(response) ] } })
 })
 
 // 4. With the client signature on that HostResponse, the Conductor creates a ServiceLog, that is a billable log
@@ -91,7 +101,7 @@ scenario.runTape('can create a servicelog', async (t, { app }) => {
 
   app.call("service", "log_request", {"entry" : sample_request})
 
-  const addr = app.call("service", "log_response", {"entry" : sample_response})
+  const addr = app.call("service", "log_response", {"entry" : sample_response1})
 
   const service_log = {
     response_hash: addr.Ok,
@@ -105,7 +115,31 @@ scenario.runTape('can create a servicelog', async (t, { app }) => {
   t.deepEqual(result, { Ok: { App: [ 'service_log', JSON.stringify(service_log) ] } })
 })
 
-// 5. On the UI, list all billable ServiceLogs, filter by start and end time (for pagination)
+// 5. List all billable ServiceLogs. TODO: filter by start and end time (for pagination)
+scenario.runTape('log then list all servicelog', async (t, { app }) => {
+  app.call("service", "set_payment_prefs", {"entry" : payment_prefs})
+
+  app.call("service", "log_request", {"entry" : sample_request})
+
+  // Log a first response & service_log
+  const addr1 = app.call("service", "log_response", {"entry" : sample_response1})
+  const service_log1 = {
+    response_hash: addr1.Ok,
+    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
+  }
+
+  // Log a second response & service_log
+  const addr2 = app.call("service", "log_response", {"entry" : sample_response1})
+  const service_log2 = {
+    response_hash: addr2.Ok,
+    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
+  }
+
+  const results = app.call("service", "list_servicelogs", {})
+
+  t.deepEqual(results, { Ok: "" })
+})
+
 
 // 6. Generate an invoice based on the selected ServiceLogs
 

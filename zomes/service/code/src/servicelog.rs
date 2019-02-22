@@ -48,3 +48,13 @@ pub fn handle_log_service(entry: ServiceLog) -> ZomeApiResult<Address> {
 pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {
     hdk::get_entry(&address)
 }
+
+pub fn handle_list_servicelogs() -> Vec<Entry> {
+    match hdk::query("service_log".into(), 0, 0) {
+        Ok(results) => results,
+        _ => vec![],
+    }.iter().map(|address| {
+        hdk::get_entry(&address).unwrap().unwrap()
+    }).collect()
+}
+

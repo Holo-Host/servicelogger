@@ -68,9 +68,14 @@ define_zome! {
             outputs: |result: ZomeApiResult<Option<Entry>>|,
             handler: servicelog::handle_get_service
         }
+        list_servicelogs: {
+            inputs: | |,
+            outputs: |result: Vec<Entry>|,
+            handler: servicelog::handle_list_servicelogs
+        }
     ]
 
     capabilities: {
-        public (Public) [set_payment_prefs, log_request, get_request, log_response, get_response, log_service, get_service]
+        public (Public) [set_payment_prefs, log_request, get_request, log_response, get_response, log_service, get_service, list_servicelogs]
     }
 }
