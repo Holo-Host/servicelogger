@@ -2,7 +2,7 @@ const path = require('path')
 const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
 Scenario.setTape(require('tape'))
 
-const dnaPath = path.join(__dirname, "../dist/bundle.json")
+const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
 const dna = Config.dna(dnaPath, 'servicelogger')
 const agentApp = Config.agent("app")
 
@@ -55,7 +55,7 @@ const sample_response2 = {
 scenario.runTape('can do initial setup', async (t, { app }) => {
   const addr = app.call("service", "set_payment_prefs", {"entry" : payment_prefs})
 
-  t.ok(addr.Ok, "Paument prefs are set")
+  t.ok(addr.Ok, "Payment prefs are set")
 })
 
 // 2. The client starts a new request for hosting, based on a call from the HC Interceptor

@@ -1,6 +1,7 @@
 {
   "name": "ServiceLogger",
   "description": "Holo Service Logger",
+  "uuid": "6f27646c-706a-4e84-9639-b3d8f3e6f2c6",
   "authors": [
     {
       "identifier": "Julio Monteiro <julio.monteiro@holo.host>",
@@ -9,6 +10,8 @@
     }
   ],
   "version": "0.1.0",
+  "dna_spec_version": "0.1.0",
   "dht": {},
   "properties": null
+
 }

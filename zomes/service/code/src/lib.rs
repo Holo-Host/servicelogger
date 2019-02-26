@@ -75,7 +75,16 @@ define_zome! {
         }
     ]
 
-    capabilities: {
-        public (Public) [set_payment_prefs, log_request, get_request, log_response, get_response, log_service, get_service, list_servicelogs]
+    traits: {
+        hc_public [
+            set_payment_prefs,
+            log_request,
+            get_request,
+            log_response,
+            get_response,
+            log_service,
+            get_service,
+            list_servicelogs
+        ]
     }
 }
