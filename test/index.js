@@ -137,7 +137,7 @@ scenario.runTape('log then list all servicelog', async (t, { app }) => {
 
   const results = app.call("service", "list_servicelogs", {})
 
-  t.deepEqual(results, { Ok: "" })
+  t.deepEqual(results, [])
 })
 
 
