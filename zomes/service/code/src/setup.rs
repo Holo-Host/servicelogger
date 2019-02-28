@@ -46,3 +46,22 @@ pub fn handle_set_payment_prefs(entry: PaymentPrefs) -> ZomeApiResult<Address> {
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
 }
+
+pub fn get_latest_payment_prefs() -> Option<PaymentPrefs> {
+    // Search the local chain for all payment_prefs
+    let prefs_list: Vec<Entry> = match hdk::query("payment_prefs".into(), 0, 0) {
+        Ok(results) => results,
+        _ => vec![],
+    }.iter().map(|address| {
+        hdk::get_entry(&address).unwrap().unwrap()
+    }).collect();
+
+    prefs_list.last()
+    .map(|entry| {
+        let json = match entry {
+            Entry::App(_, entry_value) => entry_value.into(),
+            _ => "null".into()
+        };
+        serde_json::from_str(json).unwrap()
+    })
+}

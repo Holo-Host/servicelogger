@@ -73,6 +73,11 @@ define_zome! {
             outputs: |result: Vec<Entry>|,
             handler: servicelog::handle_list_servicelogs
         }
+        generate_invoice: {
+            inputs: |price_per_unit: Option<u64>|,
+            outputs: |result: ZomeApiResult<JsonString>|,
+            handler: servicelog::handle_generate_invoice
+        }
     ]
 
     traits: {
@@ -84,7 +89,8 @@ define_zome! {
             get_response,
             log_service,
             get_service,
-            list_servicelogs
+            list_servicelogs,
+            generate_invoice
         ]
     }
 }
