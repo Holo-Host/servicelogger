@@ -4,3 +4,4 @@ target/
 .hc
 Cargo.lock
 package-lock.json
+test/tmp-storage/*
