@@ -9,7 +9,8 @@ use hdk::{
         hash::HashString,
         json::{DefaultJson, JsonString},
         dna::entry_types::Sharing,
-        cas::content::Address
+        cas::content::Address,
+        validation::EntryAction
     },
 };
 // use serde::Serialize;
@@ -36,9 +37,25 @@ pub fn service_log_definition() -> ValidatingEntryType {
         validation: |_my_entry: ServiceLog, _validation_data: hdk::ValidationData| {
             // TODO: validate if payment_prefs is set
             // TODO: validate is the response exists and signature is valid
-            Ok(())
+            validate_service_log(_my_entry, _validation_data)
         }
     )
+}
+
+fn validate_service_log(entry: ServiceLog, context: hdk::ValidationData) -> Result <(), String> {
+    if setup::get_latest_payment_prefs().is_none() {
+        return Err("Payment prefs not set, please perform setup prior to creating other entries".to_string())
+    }
+
+    match context.action {
+        EntryAction::Create => match entry {
+            ServiceLog { response_hash: hash, .. } => match hdk::get_entry(&hash) {
+                Ok(_) => Ok(()),
+                Err(e) => Err(e.to_string())
+            },
+        },
+        _ => Err(format!("Invalid action for {:?}", entry)),
+    }
 }
 
 pub fn handle_log_service(entry: ServiceLog) -> ZomeApiResult<Address> {

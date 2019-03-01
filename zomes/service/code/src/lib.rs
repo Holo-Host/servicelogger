@@ -20,7 +20,7 @@ mod response;
 mod servicelog;
 mod setup;
 
-// see https://developer.holochain.org/api/0.0.3/hdk/ for info on using the hdk library
+// see https://developer.holochain.org/api/0.0.4/hdk/ for info on using the hdk library
 
 define_zome! {
     entries: [
