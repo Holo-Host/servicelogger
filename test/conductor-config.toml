@@ -1,15 +1,16 @@
 # -----------  Agents  -----------
+# create 2 keys with "hc keygen" and paste them here
 [[agents]]
 id = "fuel_agent"
 name = "FuelTester"
-public_address = "HcSCJ8JtDb9y8qqzeuCBymm6PH9Herp9hxdBd9bMZt5e3izhdV8bc74uiIXt7jz"
-key_file = "fuel_tester.key"
+public_address = "<key1-public-address>"
+key_file = "<key1-path>"
 
 [[agents]]
 id = "logger_agent"
 name = "LoggerTester"
-public_address = "HcSci3PtG7R3PzfrggcKXW9sWrVi77fcg6WcgwgR4iavjnv73tOJCwe5FYp954i"
-key_file = "logger_tester.key"
+public_address = "<key2-public-address>"
+key_file = "<key2-path>"
 
 
 # -----------  DNA  -----------
