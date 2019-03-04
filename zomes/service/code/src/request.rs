@@ -9,12 +9,14 @@ use hdk::{
         hash::HashString,
         json::{DefaultJson, JsonString},
         dna::entry_types::Sharing,
-        cas::content::Address
+        cas::content::Address,
+        validation::EntryAction
     },
 };
 // use serde::Serialize;
 // use serde_json::{self, Value};
 
+use super::setup;
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
 pub struct ClientRequest {
@@ -35,10 +37,17 @@ pub fn client_request_definition() -> ValidatingEntryType {
         },
 
         validation: |_my_entry: ClientRequest, _validation_data: hdk::ValidationData| {
-            // TODO: validate if payment_prefs is set
-            Ok(())
+            validate_request(_my_entry, _validation_data)
         }
     )
+}
+
+fn validate_request(_entry: ClientRequest, _context: hdk::ValidationData) -> Result <(), String> {
+    if setup::get_latest_payment_prefs().is_none() {
+        return Err("Payment prefs not set, please perform setup prior to creating other entries".to_string())
+    }
+
+    Ok(())
 }
 
 pub fn handle_log_request(entry: ClientRequest) -> ZomeApiResult<Address> {

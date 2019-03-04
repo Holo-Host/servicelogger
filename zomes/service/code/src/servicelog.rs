@@ -50,7 +50,10 @@ fn validate_service_log(entry: ServiceLog, context: hdk::ValidationData) -> Resu
     match context.action {
         EntryAction::Create => match entry {
             ServiceLog { response_hash: hash, .. } => match hdk::get_entry(&hash) {
-                Ok(_) => Ok(()),
+                Ok(maybe_entry) => match maybe_entry {
+                    Some(_) => Ok(()),
+                    None => Err("HostResponse entry not found!".to_string())
+                }
                 Err(e) => Err(e.to_string())
             },
         },
