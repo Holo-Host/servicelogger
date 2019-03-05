@@ -19,6 +19,7 @@ mod request;
 mod response;
 mod servicelog;
 mod setup;
+mod invoice;
 
 // see https://developer.holochain.org/api/0.0.4/hdk/ for info on using the hdk library
 
@@ -27,7 +28,8 @@ define_zome! {
         setup::payment_prefs_definition(),
         request::client_request_definition(),
         response::host_response_definition(),
-        servicelog::service_log_definition()
+        servicelog::service_log_definition(),
+        invoice::invoiced_logs_definition()
     ]
 
     genesis: || { Ok(()) }
@@ -70,13 +72,13 @@ define_zome! {
         }
         list_servicelogs: {
             inputs: | |,
-            outputs: |result: Vec<Entry>|,
+            outputs: |result: Vec<Address>|,
             handler: servicelog::handle_list_servicelogs
         }
         generate_invoice: {
             inputs: |price_per_unit: Option<u64>|,
-            outputs: |result: ZomeApiResult<JsonString>|,
-            handler: servicelog::handle_generate_invoice
+            outputs: |result: ZomeApiResult<Address>|,
+            handler: invoice::handle_generate_invoice
         }
     ]
 

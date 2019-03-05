@@ -14,7 +14,7 @@ use hdk::{
     },
 };
 // use serde::Serialize;
-use serde_json::{self, json};
+// use serde_json::{self, json};
 
 use super::setup;
 
@@ -71,28 +71,14 @@ pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {
     hdk::get_entry(&address)
 }
 
-pub fn handle_list_servicelogs() -> Vec<Entry> {
+pub fn list_servicelogs() -> Vec<Address> {
     match hdk::query("service_log".into(), 0, 0) {
         Ok(results) => results,
         _ => vec![],
-    }.iter().map(|address| {
-        hdk::get_entry(&address).unwrap().unwrap()
-    }).collect()
+    }
 }
 
-pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<JsonString> {
-    let payment_refs = setup::get_latest_payment_prefs().unwrap();
-    hdk::call(
-        hdk::THIS_INSTANCE,
-        "holofuel",
-        "invoice_token",
-        "request",
-        json!({
-            "from": payment_refs.provider_address,
-            "amount": price_per_unit.unwrap(), // TODO: use the real value
-            "notes": "service log", // TODO: put some nice notes
-            "deadline": "" // TODO: use some actual dealine
-        }).into()
-    )
+pub fn handle_list_servicelogs() -> Vec<Address> {
+    list_servicelogs()
 }
 

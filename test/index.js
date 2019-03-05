@@ -5,10 +5,18 @@ Scenario.setTape(require('tape'))
 const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
 const dna = Config.dna(dnaPath, 'servicelogger')
 const agentApp = Config.agent("app")
+const appInstance = Config.instance(agentApp, dna)
 
-const instanceApp = Config.instance(agentApp, dna)
 
-const scenario = new Scenario([instanceApp])
+// WARNING: you need to place a 'holofuel.dna.json' file into the /dist folder (created by packaging the holofuel app)
+// https://github.com/Holo-Host/holofuel/
+const fuelPath = path.join(__dirname, "../dist/holofuel.dna.json")
+const fuelDna = Config.dna(fuelPath, 'holofuel')
+const fuelApp= Config.agent("fuel")
+
+const fuelInstance = Config.instance(fuelApp, fuelDna)
+
+const scenario = new Scenario([appInstance, fuelInstance])
 
 // Basic agentId check
 scenario.runTape('agentId', async (t, { app }) => {
@@ -156,6 +164,7 @@ scenario.runTape('log then list all servicelog', async (t, { app }) => {
     response_hash: addr1.Ok,
     client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
   }
+  const sl_addr1 = app.call("service", "log_service", {"entry": service_log1})
 
   // Log a second response & service_log
   const addr2 = app.call("service", "log_response", {"entry" : sample_response1})
@@ -163,13 +172,40 @@ scenario.runTape('log then list all servicelog', async (t, { app }) => {
     response_hash: addr2.Ok,
     client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
   }
+  const sl_addr2 = app.call("service", "log_service", {"entry": service_log2})
 
   const results = app.call("service", "list_servicelogs", {})
 
-  t.deepEqual(results, [])
+  t.deepEqual(results, [sl_addr1.Ok, sl_addr2.Ok])
 })
 
 
 // 6. Generate an invoice based on the selected ServiceLogs
+scenario.runTape('generating an invoice', async (t, { app, fuel }) => {
+  app.call("service", "set_payment_prefs", {"entry" : payment_prefs})
+
+  app.call("service", "log_request", {"entry" : sample_request})
+
+  // Log a first response & service_log
+  const addr1 = app.call("service", "log_response", {"entry" : sample_response1})
+  const service_log1 = {
+    response_hash: addr1.Ok,
+    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
+  }
+  app.call("service", "log_service", {"entry": service_log1})
+
+  // Log a second response & service_log
+  const addr2 = app.call("service", "log_response", {"entry" : sample_response1})
+  const service_log2 = {
+    response_hash: addr2.Ok,
+    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
+  }
+  app.call("service", "log_service", {"entry": service_log1})
+
+  const result = app.call("service", "generate_invoice", {"price_per_unit": 1.0})
+
+  t.deepEqual(result, "xoxoxo")
+})
+
 
 // 7. Checks if the unpaid value is greater than the PaymentPrefs, then call stop_hosting() on Hosting App
