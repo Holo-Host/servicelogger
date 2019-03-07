@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <title>Service Logger</title>
+  </head>
+  <body>
+
+    <h2>Service Logger</h2>
+
+    <h4>Log contents</h4>
+    <div class="overflow-auto" style="height: 100px;">
+    <ul class="list-group">
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
+    </ul>
+    </div>
+
+    <hr/>
+
+    <p>
+        <a class="btn btn-primary" data-toggle="collapse" href="#collapsePaymentPrefs" role="button" aria-expanded="false" aria-controls="collapsePaymentPrefs">
+            Set Payment Prefs
+        </a>
+    </p>
+
+    <div class="collapse" id="collapsePaymentPrefs">
+        <div class="card card-body">
+            <h4>Payment Prefs</h4>
+            <form id="set_payment_prefs">
+                <div class="form-group">
+                    <label for="provider_address">Provider address</label>
+                    <input type="text" class="form-control" id="provider_address" placeholder="965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH">
+                </div>
+                <div class="form-group">
+                    <label for="dna_bundle_hash">DNA Bundle Hash</label>
+                    <input type="text" class="form-control" id="dna_bundle_hash" placeholder="965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH">
+                </div>
+                <div class="form-group">
+                    <label for="max_fuel_per_invoice">Max Fuel Per Invoice</label>
+                    <input type="text" class="form-control" id="max_fuel_per_invoice" placeholder="1.0">
+                </div>
+                <div class="form-group">
+                    <label for="max_unpaid_value">Max Unpaid Value</label>
+                    <input type="text" class="form-control" id="max_unpaid_value" placeholder="1.0">
+                </div>
+                <button type="button" class="btn btn-primary">Set</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Extra JavaScript -->
+    <script type="text/javascript" src="holoclient.js"></script>
+    <script type="text/javascript">
+
+     node("8888","logger_instance")
+  
+     function node(port,instance_id) {
+        const url =  'ws://localhost:'+port+"/"
+        console.log("Connecting to conducton on localhost:"+port)
+        window.holoclient.connect(url).then(({call, close}) => {
+            console.log("Connected..."); 
+            $( "#set_payment_prefs button" ).on("click", function( e ) {
+                e.preventDefault();
+                const entry = {
+                    provider_address: $("input#provider_address").val(),
+                    dna_bundle_hash: $("input#dna_bundle_hash").val(),
+                    max_fuel_per_invoice: $("input#max_fuel_per_invoice").val(),
+                    max_unpaid_value: $("input#max_unpaid_value").val(),
+                    }
+                console.log(entry);
+                call(instance_id, 'service', 'set_payment_prefs')({
+                    entry: entry,
+                }).then(result => console.log(result))
+                return false
+            });
+    
+            //  document.getElementById('info'+identifier).addEventListener('click', e => {
+            //      call('info/instances')().then(data => console.log(data))
+            //  })
+  
+            //  document.getElementById('close'+identifier).addEventListener('click', e => {
+            //      close()
+            //  })
+         })
+     }
+  
+  
+  
+     function getInstance(info, dna, agent) {
+         const entry = Object.entries(info)
+                             .find(([id, value]) => value.dna === dna && value.agent === agent)
+         if (entry) {
+             return entry[1].id
+         } else {
+             return null
+         }
+     }
+  
+     function replaceAll(str, find, replace) {
+         return str.replace(new RegExp(find, 'g'), replace);
+     }
+    </script>
+
+
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+  </body>
+</html>
