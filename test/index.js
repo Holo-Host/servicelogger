@@ -16,7 +16,7 @@ const fuelApp= Config.agent("fuel")
 
 const fuelInstance = Config.instance(fuelApp, fuelDna)
 
-const scenario = new Scenario([appInstance, fuelInstance])
+const scenario = new Scenario([appInstance, fuelInstance], { debugLog: true })
 
 // Basic agentId check
 scenario.runTape('agentId', async (t, { app }) => {

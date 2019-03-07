@@ -12,6 +12,7 @@ use hdk::{
         cas::content::Address,
         validation::EntryAction
     },
+    AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PUBLIC_TOKEN,
 };
 // use serde::Serialize;
 use serde_json::{self, json};
@@ -63,10 +64,12 @@ fn validate_invoiced_logs(entry: InvoicedLogs, context: hdk::ValidationData) -> 
 
 pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Address> {
     let payment_refs = setup::get_latest_payment_prefs().unwrap();
+    hdk::debug(format!("********DEBUG******** instance {:?}", &hdk::THIS_INSTANCE))?;
+
     let holofuel_address = match hdk::call(
         hdk::THIS_INSTANCE,
         "transactions",
-        "invoice_token",
+        Address::from(PUBLIC_TOKEN.to_string()),
         "request",
         json!({
             "from": payment_refs.provider_address,
