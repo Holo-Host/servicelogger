@@ -25,6 +25,7 @@ file = "../dist/servicelogger.dna.json"
 hash = "Qm328wyq38925z"
 
 
+
 [[instances]]
 id = "fuel_instance"
 dna = "fuel-dna"
@@ -51,11 +52,16 @@ path = "tmp-storage"
 id = "websocket_interface"
 [interfaces.driver]
 type = "websocket"
-port = 4000
+port = 8888
 [[interfaces.instances]]
 id = "fuel_instance"
 [[interfaces.instances]]
 id = "logger_instance"
+
+[[bridges]]
+caller_id = "logger_instance"
+callee_id = "fuel_instance"
+handle = "holofuel_bridge"
 
 # -----------  UI  -----------
 #[[ui_bundles]]
