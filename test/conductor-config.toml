@@ -1,35 +1,33 @@
 # -----------  Agents  -----------
 # create 2 keys with "hc keygen" and paste them here
 [[agents]]
-id = "fuel_agent"
+id = "fuel-agent"
 name = "FuelTester"
-public_address = "<key1-public-address>"
-key_file = "<key1-path>"
+public_address = "<paste-key-here>"
+key_file = "<paste-key-path-here>"
 
 [[agents]]
-id = "logger_agent"
+id = "logger-agent"
 name = "LoggerTester"
-public_address = "<key2-public-address>"
-key_file = "<key2-path>"
+public_address = "<paste-key-here>"
+key_file = "<paste-key-path-here>"
 
 
 # -----------  DNA  -----------
 [[dnas]]
 id = "fuel-dna"
 file = "../dist/holofuel.dna.json"
-hash = "Qm328wyq38924y"
+hash = "QmZPz7JfxKHHdu6f1ywXU92xonkC9cNetUySWVJSp5F4DV"
 
 [[dnas]]
 id = "logger-dna"
 file = "../dist/servicelogger.dna.json"
-hash = "Qm328wyq38925z"
-
-
+hash = "QmZPz7JfxKHHdu6f1ywXU92xonkC9cNetUySWVJSp5F4DV"
 
 [[instances]]
-id = "fuel_instance"
+id = "fuel-instance"
 dna = "fuel-dna"
-agent = "fuel_agent"
+agent = "fuel-agent"
 [instances.logger]
 type = "simple"
 file = "fuel.log"
@@ -38,9 +36,9 @@ type = "file"
 path = "tmp-storage"
 
 [[instances]]
-id = "logger_instance"
+id = "logger-instance"
 dna = "logger-dna"
-agent = "logger_agent"
+agent = "logger-agent"
 [instances.logger]
 type = "simple"
 file = "logger.log"
@@ -49,31 +47,42 @@ type = "file"
 path = "tmp-storage"
 
 [[interfaces]]
-id = "websocket_interface"
+id = "websocket-interface"
+admin = true
 [interfaces.driver]
 type = "websocket"
 port = 8888
 [[interfaces.instances]]
-id = "fuel_instance"
+id = "fuel-instance"
 [[interfaces.instances]]
-id = "logger_instance"
+id = "logger-instance"
+
+[[interfaces]]
+id = "http-interface"
+[interfaces.driver]
+type = "http"
+port = 4000
+[[interfaces.instances]]
+id = "fuel-instance"
+[[interfaces.instances]]
+id = "logger-instance"
 
 [[bridges]]
-caller_id = "logger_instance"
-callee_id = "fuel_instance"
-handle = "holofuel_bridge"
+caller_id = "logger-instance"
+callee_id = "fuel-instance"
+handle = "holofuel-bridge"
 
 # -----------  UI  -----------
-#[[ui_bundles]]
-#id = "main"
-#root_dir = "./ui-agent1"
-#hash = "Qmjk0"
+[[ui_bundles]]
+id = "main"
+root_dir = "../ui"
+hash = "Qmjk0"
 
-#[[ui_interfaces]]
-#id = "ui-interface"
-#bundle = "main"
-#port = 8800
-#dna_interface = "websocket_interface"
+[[ui_interfaces]]
+id = "ui-interface"
+bundle = "main"
+port = 8800
+dna_interface = "websocket-interface"
 
 
 #[[ui_bundles]]
@@ -88,10 +97,10 @@ handle = "holofuel_bridge"
 #dna_interface = "websocket_interface"
 
 # -----------  Networking  -----------
-#[network]
-#n3h_path = "/home/lisa/Documents/gitrepos/holochain/Networking/n3h-0.0.4-alpha1"
-#n3h_persistence_path = "/tmp"
-#bootstrap_nodes = []
+# [network]
+# n3h_path = "/home/monteiro/src/n3h"
+# n3h_persistence_path = "/tmp"
+# bootstrap_nodes = []
 
 # -----------  Networking instructions  -----------
 # To get networking running requires the following steps:

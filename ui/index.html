@@ -43,6 +43,8 @@
         </a>
     </p>
 
+    <button type="button" id="info" class="btn btn-primary">Instance Info</button>
+
     <div class="collapse" id="collapsePaymentPrefs">
         <div class="card card-body">
             <h4>Payment Prefs</h4>
@@ -72,11 +74,11 @@
     <script type="text/javascript" src="holoclient.js"></script>
     <script type="text/javascript">
 
-     node("8888","logger_instance")
+     node("8888","test-instance")
   
      function node(port,instance_id) {
         const url =  'ws://localhost:'+port+"/"
-        console.log("Connecting to conducton on localhost:"+port)
+        console.log("Connecting to conductor instance "+instance_id+" on localhost:"+port)
         window.holoclient.connect(url).then(({call, close}) => {
             console.log("Connected..."); 
             $( "#set_payment_prefs button" ).on("click", function( e ) {
@@ -84,27 +86,25 @@
                 const entry = {
                     provider_address: $("input#provider_address").val(),
                     dna_bundle_hash: $("input#dna_bundle_hash").val(),
-                    max_fuel_per_invoice: $("input#max_fuel_per_invoice").val(),
-                    max_unpaid_value: $("input#max_unpaid_value").val(),
+                    max_fuel_per_invoice: parseFloat($("input#max_fuel_per_invoice").val()),
+                    max_unpaid_value: parseFloat($("input#max_unpaid_value").val()),
                     }
                 console.log(entry);
                 call(instance_id, 'service', 'set_payment_prefs')({
-                    entry: entry,
+                    "entry": entry,
                 }).then(result => console.log(result))
-                return false
+                //call(instance_id, 'service', 'list_servicelogs')({}).then(result => console.log(result))
             });
     
-            //  document.getElementById('info'+identifier).addEventListener('click', e => {
-            //      call('info/instances')().then(data => console.log(data))
-            //  })
+            $( "button#info" ).on("click", function( e ) {
+                call('info/instances')().then(data => console.log(data))
+            })
   
             //  document.getElementById('close'+identifier).addEventListener('click', e => {
             //      close()
             //  })
          })
      }
-  
-  
   
      function getInstance(info, dna, agent) {
          const entry = Object.entries(info)
@@ -116,9 +116,6 @@
          }
      }
   
-     function replaceAll(str, find, replace) {
-         return str.replace(new RegExp(find, 'g'), replace);
-     }
     </script>
 
 
