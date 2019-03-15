@@ -21,7 +21,7 @@ use super::setup;
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
 pub struct ServiceLog {
     response_hash: HashString,
-    client_signature: HashString,
+    client_signature: HashString, // signed response_hash
 }
 
 pub fn service_log_definition() -> ValidatingEntryType {

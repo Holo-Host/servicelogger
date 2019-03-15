@@ -23,7 +23,7 @@ pub struct ClientRequest {
     agent_id: Address,
     zome_call_spec: String,
     dna_hash: HashString,
-    client_signature: HashString,
+    client_signature: HashString, // signature contains dna_hash + zome_call_spec 
 }
 
 pub fn client_request_definition() -> ValidatingEntryType {

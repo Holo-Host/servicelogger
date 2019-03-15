@@ -29,8 +29,9 @@ pub struct HostingStats {
 pub struct HostResponse {
     request_hash: HashString,
     hosting_stats: HostingStats,
-    response_log: String,
-    host_signature: HashString,
+    response_data_hash: HashString,
+    response_log: String, // not included into the signature
+    host_signature: HashString, // signed request_hash + response_data_hash + hosting_stats
 }
 
 pub fn host_response_definition() -> ValidatingEntryType {
