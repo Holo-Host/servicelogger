@@ -17,7 +17,6 @@ use hdk::{
 // use serde::Serialize;
 use serde_json::{self, json};
 
-use super::setup;
 use super::servicelog;
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
@@ -44,10 +43,6 @@ pub fn invoiced_logs_definition() -> ValidatingEntryType {
 }
 
 fn validate_invoiced_logs(entry: InvoicedLogs, context: hdk::ValidationData) -> Result <(), String> {
-    if setup::get_latest_payment_prefs().is_none() {
-        return Err("Payment prefs not set, please perform setup prior to creating other entries".to_string())
-    }
-
     match context.action {
         EntryAction::Create => match entry {
             InvoicedLogs { servicelog_list: hashes, .. } => hashes.iter().map(|hash| match hdk::get_entry(&hash) {
@@ -63,7 +58,6 @@ fn validate_invoiced_logs(entry: InvoicedLogs, context: hdk::ValidationData) -> 
 }
 
 pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Address> {
-    let payment_refs = setup::get_latest_payment_prefs().unwrap();
     hdk::debug(format!("********DEBUG******** instance {:?}", &hdk::THIS_INSTANCE))?;
 
     let holofuel_address = match hdk::call(
@@ -72,7 +66,7 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
         Address::from(PUBLIC_TOKEN.to_string()),
         "request",
         json!({
-            "from": payment_refs.provider_address,
+            "from": "xxx-undefined_address-xxx",
             "amount": price_per_unit.unwrap(), // TODO: use the real value
             "notes": "service log", // TODO: put some nice notes
             "deadline": "" // TODO: use some actual dealine

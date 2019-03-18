@@ -16,8 +16,6 @@ use hdk::{
 // use serde::Serialize;
 // use serde_json::{self, Value};
 
-use super::setup;
-
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
 pub struct HostingStats {
     pub cpu_seconds: f64,
@@ -51,9 +49,6 @@ pub fn host_response_definition() -> ValidatingEntryType {
 }
 
 fn validate_response(entry: HostResponse, context: hdk::ValidationData) -> Result <(), String> {
-    if setup::get_latest_payment_prefs().is_none() {
-        return Err("Payment prefs not set, please perform setup prior to creating other entries".to_string())
-    }
 
     match context.action {
         EntryAction::Create => match entry {

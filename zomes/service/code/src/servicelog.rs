@@ -16,8 +16,6 @@ use hdk::{
 // use serde::Serialize;
 // use serde_json::{self, json};
 
-use super::setup;
-
 #[derive(Serialize, Deserialize, Debug, DefaultJson)]
 pub struct ServiceLog {
     response_hash: HashString,
@@ -35,17 +33,12 @@ pub fn service_log_definition() -> ValidatingEntryType {
         },
 
         validation: |_my_entry: ServiceLog, _validation_data: hdk::ValidationData| {
-            // TODO: validate if payment_prefs is set
-            // TODO: validate is the response exists and signature is valid
             validate_service_log(_my_entry, _validation_data)
         }
     )
 }
 
 fn validate_service_log(entry: ServiceLog, context: hdk::ValidationData) -> Result <(), String> {
-    if setup::get_latest_payment_prefs().is_none() {
-        return Err("Payment prefs not set, please perform setup prior to creating other entries".to_string())
-    }
 
     match context.action {
         EntryAction::Create => match entry {

@@ -18,14 +18,12 @@ use hdk::holochain_core_types::{
 mod request;
 mod response;
 mod servicelog;
-mod setup;
 mod invoice;
 
 // see https://developer.holochain.org/api/0.0.4/hdk/ for info on using the hdk library
 
 define_zome! {
     entries: [
-        setup::payment_prefs_definition(),
         request::client_request_definition(),
         response::host_response_definition(),
         servicelog::service_log_definition(),
@@ -35,11 +33,6 @@ define_zome! {
     genesis: || { Ok(()) }
 
     functions: [
-        set_payment_prefs: {
-            inputs: |entry: setup::PaymentPrefs|,
-            outputs: |result: ZomeApiResult<Address>|,
-            handler: setup::handle_set_payment_prefs
-        }
         log_request: {
             inputs: |entry: request::ClientRequest|,
             outputs: |result: ZomeApiResult<Address>|,
@@ -84,7 +77,6 @@ define_zome! {
 
     traits: {
         hc_public [
-            set_payment_prefs,
             log_request,
             get_request,
             log_response,
