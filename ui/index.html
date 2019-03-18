@@ -41,34 +41,34 @@
     <hr/>
 
     <p>
-        <a class="btn btn-primary" data-toggle="collapse" href="#collapsePaymentPrefs" role="button" aria-expanded="false" aria-controls="collapsePaymentPrefs">
-            Set Payment Prefs
+        <a class="btn btn-primary" data-toggle="collapse" href="#collapseClientRequest" role="button" aria-expanded="false" aria-controls="collapseClientRequest">
+            New Client Request
         </a>
     </p>
 
     <button type="button" id="info" class="btn btn-primary">Instance Info</button>
 
-    <div class="collapse" id="collapsePaymentPrefs">
+    <div class="collapse" id="collapseClientRequest">
         <div class="card card-body">
-            <h4>Payment Prefs</h4>
-            <form id="set_payment_prefs">
+            <h4>Client Request</h4>
+            <form id="log_request">
                 <div class="form-group">
-                    <label for="provider_address">Provider address</label>
-                    <input type="text" class="form-control" id="provider_address" placeholder="965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH">
+                    <label for="agent_id">Agent ID</label>
+                    <input type="text" class="form-control" id="agent_id" placeholder="QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb">
                 </div>
                 <div class="form-group">
-                    <label for="dna_bundle_hash">DNA Bundle Hash</label>
-                    <input type="text" class="form-control" id="dna_bundle_hash" placeholder="965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH">
+                    <label for="zome_call_spec">Zome Callspec</label>
+                    <input type="text" class="form-control" id="zome_call_spec" placeholder="blog/create_post">
                 </div>
                 <div class="form-group">
-                    <label for="max_fuel_per_invoice">Max Fuel Per Invoice</label>
-                    <input type="text" class="form-control" id="max_fuel_per_invoice" placeholder="1.0">
+                    <label for="dna_hash">DNA Hash</label>
+                    <input type="text" class="form-control" id="dna_hash" placeholder="QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A">
                 </div>
                 <div class="form-group">
-                    <label for="max_unpaid_value">Max Unpaid Value</label>
-                    <input type="text" class="form-control" id="max_unpaid_value" placeholder="1.0">
+                    <label for="client_signature">Client Signature</label>
+                    <input type="text" class="form-control" id="client_signature" placeholder="QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk">
                 </div>
-                <button type="button" class="btn btn-primary">Set</button>
+                <button type="button" class="btn btn-primary">Submit</button>
             </form>
         </div>
     </div>
@@ -84,16 +84,16 @@
         console.log("Connecting to conductor instance "+instance_id+" on localhost:"+port)
         window.holoclient.connect(url).then(({call, close}) => {
             console.log("Connected..."); 
-            $( "#set_payment_prefs button" ).on("click", function( e ) {
+            $( "#log_request button" ).on("click", function( e ) {
                 e.preventDefault();
                 const entry = {
-                    provider_address: $("input#provider_address").val(),
-                    dna_bundle_hash: $("input#dna_bundle_hash").val(),
-                    max_fuel_per_invoice: parseFloat($("input#max_fuel_per_invoice").val()),
-                    max_unpaid_value: parseFloat($("input#max_unpaid_value").val()),
+                    agent_id: $("#log_request #agent_id").val(),
+                    zome_call_spec: $("#log_request #zome_call_spec").val(),
+                    dna_hash: $("#log_request #dna_hash").val(),
+                    client_signature: $("#log_request #client_signature").val(),
                     }
                 console.log(entry);
-                call(instance_id, 'service', 'set_payment_prefs')({
+                call(instance_id, 'service', 'log_request')({
                     "entry": entry,
                 }).then(result => console.log(result))
                 //call(instance_id, 'service', 'list_servicelogs')({}).then(result => console.log(result))
