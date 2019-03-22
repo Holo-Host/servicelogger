@@ -35,28 +35,16 @@
 
 
     <h4>Log contents</h4>
-    <button type="button" id="refresh_services" class="btn btn-primary">Refresh</button>
     <button type="button" id="info" class="btn btn-primary">Instance Info</button>
-    <div class="overflow-auto" style="height: 300px;">
-    <ul class="list-group" id="servicelog_list">
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-        <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
-    </ul>
-
-    </div>
+    <button type="button" id="refresh_services" class="btn btn-primary">Refresh</button>
+    <button type="button" id="generate_invoice" class="btn btn-primary">Generate Invoice</button>
+        <select multiple class="form-control" id="servicelog_list" style="height: 200px;">
+            <option>QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</option>
+            <option>QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</option>
+            <option>QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</option>
+            <option>QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</option>
+            <option>QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</option>
+        </select>
 
     <hr/>
 
@@ -216,9 +204,9 @@
                 call(instance_id, 'service', 'list_servicelogs')({}).then(result => {
                     result = JSON.parse(result)
                     console.log(result)
-                    $('ul#servicelog_list').html("")
+                    $('select#servicelog_list').html("")
                     for (var i = 0; i < result.length; i++) {
-                        $('ul#servicelog_list').append('<li class="list-group-item">'+result[i]+'</li>')
+                        $('select#servicelog_list').append('<option>'+result[i]+'</option>')
                     }
                 })
             })
