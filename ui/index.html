@@ -14,9 +14,31 @@
 
     <h2>Service Logger</h2>
 
+    <div class="modal fade" id="alertModal" tabindex="-1" role="dialog" aria-labelledby="alertModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="alertModalLabel">Alert</h5>
+              <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+              </button>
+            </div>
+            <div class="modal-body" id="alertMessage">
+              ...
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
     <h4>Log contents</h4>
-    <div class="overflow-auto" style="height: 100px;">
-    <ul class="list-group">
+    <button type="button" id="refresh_services" class="btn btn-primary">Refresh</button>
+    <button type="button" id="info" class="btn btn-primary">Instance Info</button>
+    <div class="overflow-auto" style="height: 300px;">
+    <ul class="list-group" id="servicelog_list">
         <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
         <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
         <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
@@ -34,56 +56,111 @@
         <li class="list-group-item">QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</li>
     </ul>
 
-    <button type="button" id="refresh_services" class="btn btn-primary">Refresh</button>
-
     </div>
 
     <hr/>
 
-    <p>
-        <a class="btn btn-primary" data-toggle="collapse" href="#collapseClientRequest" role="button" aria-expanded="false" aria-controls="collapseClientRequest">
-            New Client Request
-        </a>
-    </p>
+    <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
+        <li class="nav-item">
+          <a class="nav-link active" id="pills-request-tab" data-toggle="pill" href="#pills-request" role="tab" aria-controls="pills-request" aria-selected="true">Client Request</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="pills-response-tab" data-toggle="pill" href="#pills-response" role="tab" aria-controls="pills-response" aria-selected="false">Host Response</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" id="pills-servicelog-tab" data-toggle="pill" href="#pills-servicelog" role="tab" aria-controls="pills-servicelog" aria-selected="false">Service Log</a>
+        </li>
+    </ul>
 
-    <button type="button" id="info" class="btn btn-primary">Instance Info</button>
-
-    <div class="collapse" id="collapseClientRequest">
-        <div class="card card-body">
-            <h4>Client Request</h4>
-            <form id="log_request">
-                <div class="form-group">
-                    <label for="agent_id">Agent ID</label>
-                    <input type="text" class="form-control" id="agent_id" placeholder="QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb">
-                </div>
-                <div class="form-group">
-                    <label for="zome_call_spec">Zome Callspec</label>
-                    <input type="text" class="form-control" id="zome_call_spec" placeholder="blog/create_post">
-                </div>
-                <div class="form-group">
-                    <label for="dna_hash">DNA Hash</label>
-                    <input type="text" class="form-control" id="dna_hash" placeholder="QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A">
-                </div>
-                <div class="form-group">
-                    <label for="client_signature">Client Signature</label>
-                    <input type="text" class="form-control" id="client_signature" placeholder="QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk">
-                </div>
-                <button type="button" class="btn btn-primary">Submit</button>
-            </form>
+      <div class="tab-content" id="pills-tabContent">
+        <div class="tab-pane fade show active" id="pills-request" role="tabpanel" aria-labelledby="pills-request-tab">
+            <div class="card card-body">
+                <h4>Client Request</h4>
+                <form id="log_request">
+                    <div class="form-group">
+                        <label for="agent_id">Agent ID</label>
+                        <input type="text" class="form-control" id="agent_id" placeholder="QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb">
+                    </div>
+                    <div class="form-group">
+                        <label for="zome_call_spec">Zome Callspec</label>
+                        <input type="text" class="form-control" id="zome_call_spec" placeholder="blog/create_post">
+                    </div>
+                    <div class="form-group">
+                        <label for="dna_hash">DNA Hash</label>
+                        <input type="text" class="form-control" id="dna_hash" placeholder="QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_signature">Client Signature</label>
+                        <input type="text" class="form-control" id="client_signature" placeholder="QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk">
+                    </div>
+                    <button type="button" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
         </div>
-    </div>
+        <div class="tab-pane fade" id="pills-response" role="tabpanel" aria-labelledby="pills-response-tab">
+            <div class="card card-body">
+                <h4>Host Response</h4>
+                <form id="log_response">
+                    <div class="form-group">
+                        <label for="request_hash">Request Hash</label>
+                        <input type="text" class="form-control" id="request_hash" placeholder="QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb">
+                    </div>
+                    <div class="card" style="width: 18rem;">
+                        <div class="card-body">
+                            <h5 class="card-title">Hosting Stats</h5>
+                            <input type="text" class="form-control" id="cpu_seconds" placeholder="cpu_seconds">
+                            <input type="text" class="form-control" id="bytes_in" placeholder="bytes_in">
+                            <input type="text" class="form-control" id="bytes_out" placeholder="bytes_out">
+                        </div>
+                        </div>
+                    <div class="form-group">
+                        <label for="response_data_hash">Response Data Hash</label>
+                        <input type="text" class="form-control" id="response_data_hash" placeholder="QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A">
+                    </div>
+                    <div class="form-group">
+                        <label for="response_log">Response Log</label>
+                        <input type="text" class="form-control" id="response_log" placeholder='64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352'>
+                    </div>
+                    <div class="form-group">
+                        <label for="host_signature">Host Signature</label>
+                        <input type="text" class="form-control" id="host_signature" placeholder="QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk">
+                    </div>
+                    <button type="button" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+        <div class="tab-pane fade" id="pills-servicelog" role="tabpanel" aria-labelledby="pills-servicelog-tab">
+            <div class="card card-body">
+                <h4>Service Log</h4>
+                <form id="log_service">
+                    <div class="form-group">
+                        <label for="response_hash">Response Hash</label>
+                        <input type="text" class="form-control" id="response_hash" placeholder="QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb">
+                    </div>
+                    <div class="form-group">
+                        <label for="client_signature">Client Signature</label>
+                        <input type="text" class="form-control" id="client_signature" placeholder="QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk">
+                    </div>
+                    <button type="button" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+      </div>
+
+
 
     <!-- Extra JavaScript -->
     <script type="text/javascript" src="holoclient.js"></script>
     <script type="text/javascript">
 
+     //node("8888","test-instance")
      node("8888","test-instance")
   
      function node(port,instance_id) {
         const url =  'ws://localhost:'+port+"/"
         console.log("Connecting to conductor instance "+instance_id+" on localhost:"+port)
         window.holoclient.connect(url).then(({call, close}) => {
-            console.log("Connected..."); 
+            console.log("Connected...");
             $( "#log_request button" ).on("click", function( e ) {
                 e.preventDefault();
                 const entry = {
@@ -95,12 +172,61 @@
                 console.log(entry);
                 call(instance_id, 'service', 'log_request')({
                     "entry": entry,
-                }).then(result => console.log(result))
+                }).then(result => $('#alertMessage').html(result))
+                $('#alertModal').modal("show")
                 //call(instance_id, 'service', 'list_servicelogs')({}).then(result => console.log(result))
             });
-    
+            $( "#log_response button" ).on("click", function( e ) {
+                e.preventDefault();
+                const hosting_stats = {
+                    cpu_seconds: parseFloat($("#log_response #cpu_seconds").val()),
+                    bytes_in: parseInt($("#log_response #bytes_in").val()),
+                    bytes_out: parseInt($("#log_response #bytes_out").val()),
+                }
+                const entry = {
+                    request_hash: $("#log_response #request_hash").val(),
+                    hosting_stats: hosting_stats,
+                    response_data_hash: $("#log_response #response_data_hash").val(),
+                    response_log: $("#log_response #response_log").val(),
+                    host_signature: $("#log_response #host_signature").val(),
+                    }
+                console.log(entry);
+                call(instance_id, 'service', 'log_response')({
+                    "entry": entry,
+                }).then(result => $('#alertMessage').html(result))
+                $('#alertModal').modal("show")
+                //call(instance_id, 'service', 'list_servicelogs')({}).then(result => console.log(result))
+            });
+
+            $( "#log_service button" ).on("click", function( e ) {
+                e.preventDefault();
+                const entry = {
+                    response_hash: $("#log_service #response_hash").val(),
+                    client_signature: $("#log_service #client_signature").val(),
+                    }
+                console.log(entry);
+                call(instance_id, 'service', 'log_service')({
+                    "entry": entry,
+                }).then(result => $('#alertMessage').html(result))
+                $('#alertModal').modal("show")
+                //call(instance_id, 'service', 'list_servicelogs')({}).then(result => console.log(result))
+            });
+
+            $( "button#refresh_services" ).on("click", function( e ) {
+                call(instance_id, 'service', 'list_servicelogs')({}).then(result => {
+                    result = JSON.parse(result)
+                    console.log(result)
+                    $('ul#servicelog_list').html("")
+                    for (var i = 0; i < result.length; i++) {
+                        $('ul#servicelog_list').append('<li class="list-group-item">'+result[i]+'</li>')
+                    }
+                })
+            })
+
             $( "button#info" ).on("click", function( e ) {
                 call('info/instances')().then(data => console.log(data))
+                $('#alertMessage').html("Check the console log for the data")
+                $('#alertModal').modal("show")
             })
   
             //  document.getElementById('close'+identifier).addEventListener('click', e => {
