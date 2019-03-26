@@ -161,13 +161,12 @@
                        client_signature: $("#log_request #client_signature").val(),
                        }
                    console.log(entry);
-                   call(instance_id, 'service', 'log_request')({
+                   callZome(instance_id, 'service', 'log_request')({
                        "entry": entry,
                    }).then(result => $('#alertMessage').html(result))
                    $('#alertModal').modal("show")
                    //callZome(instance_id, 'service', 'list_servicelogs')({}).then(result => console.log(result))
                });
-               console.log("Right");
                $( "#log_response button" ).on("click", function( e ) {
                    e.preventDefault();
                    const hosting_stats = {

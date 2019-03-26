@@ -61,7 +61,7 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
     hdk::debug(format!("********DEBUG******** instance {:?}", &hdk::THIS_INSTANCE))?;
 
     let holofuel_address = match hdk::call(
-        hdk::THIS_INSTANCE,
+        "holofuel-bridge",
         "transactions",
         Address::from(PUBLIC_TOKEN.to_string()),
         "request",
