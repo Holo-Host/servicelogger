@@ -3,8 +3,8 @@
 [[agents]]
 id = "main-agent"
 name = "LoggerTester"
-public_address = "<paste-key-here>"
-key_file = "<paste-key-path>"
+public_address = "<paste-address-here>"
+keystore_file = "<paste-key-location-here>"
 
 # -----------  DNA  -----------
 [[dnas]]
