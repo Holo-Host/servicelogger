@@ -10,13 +10,14 @@ use hdk::{
         json::{DefaultJson, JsonString},
         dna::entry_types::Sharing,
         cas::content::Address,
-        validation::EntryAction
+        validation::EntryAction,
+        validation::EntryValidationData
     },
 };
 // use serde::Serialize;
 // use serde_json::{self, json};
 
-#[derive(Serialize, Deserialize, Debug, DefaultJson)]
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
     response_hash: HashString,
     client_signature: HashString, // signed response_hash
@@ -27,21 +28,19 @@ pub fn service_log_definition() -> ValidatingEntryType {
         name: "service_log",
         description: "this it the entry defintion for a service log",
         sharing: Sharing::Public,
-        native_type: ServiceLog,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
 
-        validation: |_my_entry: ServiceLog, _validation_data: hdk::ValidationData| {
-            validate_service_log(_my_entry, _validation_data)
+        validation: |context: hdk::EntryValidationData<ServiceLog>| {
+            validate_service_log(context)
         }
     )
 }
 
-fn validate_service_log(entry: ServiceLog, context: hdk::ValidationData) -> Result <(), String> {
-
-    match context.action {
-        EntryAction::Create => match entry {
+fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), String> {
+    match context {
+        EntryValidationData::Create{entry:obj,validation_data:_} => match obj {
             ServiceLog { response_hash: hash, .. } => match hdk::get_entry(&hash) {
                 Ok(maybe_entry) => match maybe_entry {
                     Some(_) => Ok(()),
@@ -49,8 +48,10 @@ fn validate_service_log(entry: ServiceLog, context: hdk::ValidationData) -> Resu
                 }
                 Err(e) => Err(e.to_string())
             },
-        },
-        _ => Err(format!("Invalid action for {:?}", entry)),
+        }
+        _ => {
+            Err("Failed to validate with wrong entry type".to_string())
+        }
     }
 }
 

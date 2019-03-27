@@ -10,13 +10,14 @@ use hdk::{
         json::{DefaultJson, JsonString},
         dna::entry_types::Sharing,
         cas::content::Address,
-        validation::EntryAction
+        validation::EntryAction,
+        validation::EntryValidationData
     },
 };
 // use serde::Serialize;
 // use serde_json::{self, Value};
 
-#[derive(Serialize, Deserialize, Debug, DefaultJson)]
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ClientRequest {
     agent_id: Address,
     zome_call_spec: String,
@@ -29,20 +30,27 @@ pub fn client_request_definition() -> ValidatingEntryType {
         name: "client_request",
         description: "this it the entry defintion for a client request",
         sharing: Sharing::Public,
-        native_type: ClientRequest,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
 
-        validation: |_my_entry: ClientRequest, _validation_data: hdk::ValidationData| {
-            validate_request(_my_entry, _validation_data)
+        validation: |_validation_data: hdk::EntryValidationData<ClientRequest>| {
+            validate_request(_validation_data)
         }
     )
 }
 
-fn validate_request(_entry: ClientRequest, _context: hdk::ValidationData) -> Result <(), String> {
-    Ok(())
+fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), String> {
+    match context {
+        EntryValidationData::Create{entry:_obj,validation_data:_} => {
+            Ok(())
+        } 
+        _ => {
+            Err("Failed to validate with wrong entry type".to_string())
+        }
+    }
 }
+
 
 pub fn handle_log_request(entry: ClientRequest) -> ZomeApiResult<Address> {
     let entry = Entry::App("client_request".into(), entry.into());

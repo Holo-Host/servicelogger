@@ -10,7 +10,8 @@ use hdk::{
         json::{DefaultJson, JsonString},
         dna::entry_types::Sharing,
         cas::content::Address,
-        validation::EntryAction
+        validation::EntryAction,
+        validation::EntryValidationData
     },
     AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PUBLIC_TOKEN,
 };
@@ -19,7 +20,7 @@ use serde_json::{self, json};
 
 use super::servicelog;
 
-#[derive(Serialize, Deserialize, Debug, DefaultJson)]
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct InvoicedLogs {
     servicelog_list: Vec<HashString>,
     holofuel_request: HashString,
@@ -31,20 +32,19 @@ pub fn invoiced_logs_definition() -> ValidatingEntryType {
         name: "invoiced_logs",
         description: "this it the entry defintion for a bundle of invoiced service logs",
         sharing: Sharing::Public,
-        native_type: InvoicedLogs,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
 
-        validation: |entry: InvoicedLogs, context: hdk::ValidationData| {
-            validate_invoiced_logs(entry, context)
+        validation: |context: hdk::EntryValidationData<InvoicedLogs>| {
+            validate_invoiced_logs(context)
         }
     )
 }
 
-fn validate_invoiced_logs(entry: InvoicedLogs, context: hdk::ValidationData) -> Result <(), String> {
-    match context.action {
-        EntryAction::Create => match entry {
+fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Result <(), String> {
+    match context {
+        EntryValidationData::Create{entry:obj,validation_data:_} => match obj {
             InvoicedLogs { servicelog_list: hashes, .. } => hashes.iter().map(|hash| match hdk::get_entry(&hash) {
                 Ok(maybe_entry) => match maybe_entry {
                     Some(_) => Ok(()),
@@ -53,7 +53,9 @@ fn validate_invoiced_logs(entry: InvoicedLogs, context: hdk::ValidationData) -> 
                 Err(e) => Err(e.to_string())
             }).collect(),
         },
-        _ => Err(format!("Invalid action for {:?}", entry)),
+        _ => {
+            Err("Failed to validate with wrong entry type".to_string())
+        }
     }
 }
 
