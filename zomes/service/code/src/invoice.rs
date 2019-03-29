@@ -62,8 +62,10 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
 pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Address> {
     hdk::debug(format!("********DEBUG******** instance {:?}", &hdk::THIS_INSTANCE))?;
 
+    // TODO: Bridge call to Hosting App to get payment parameters
+
     let holofuel_address = match hdk::call(
-        "random",
+        "fuel-instance",
         "transactions",
         "".into(),
         "request",

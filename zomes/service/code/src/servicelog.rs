@@ -59,6 +59,8 @@ pub fn handle_log_service(entry: ServiceLog) -> ZomeApiResult<Address> {
     let entry = Entry::App("service_log".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
+    // TODO: Check payment prefs via bridge to Hosting app, and see if needed to generate an invoice automatically
+
 }
 
 pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {
