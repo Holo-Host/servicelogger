@@ -65,7 +65,7 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
     // TODO: Bridge call to Hosting App to get payment parameters
 
     let holofuel_address = match hdk::call(
-        "fuel-instance",
+        "holofuel-bridge",
         "transactions",
         "".into(),
         "request",
