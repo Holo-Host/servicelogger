@@ -26,7 +26,7 @@ type = "simple"
 file = "fuel.log"
 [instances.storage]
 type = "file"
-path = "tmp-storage"
+path = "tmp-storage1"
 
 [[instances]]
 id = "logger-instance"
@@ -37,7 +37,7 @@ type = "simple"
 file = "logger.log"
 [instances.storage]
 type = "file"
-path = "tmp-storage"
+path = "tmp-storage2"
 
 [[interfaces]]
 id = "websocket-interface"
