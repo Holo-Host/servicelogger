@@ -19,6 +19,7 @@ use hdk::{
 use serde_json::{self, json};
 
 use super::servicelog;
+use super::setup;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct InvoicedLogs {
@@ -63,6 +64,7 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
     hdk::debug(format!("********DEBUG******** instance {:?}", &hdk::THIS_INSTANCE))?;
 
     // TODO: Bridge call to Hosting App to get payment parameters
+    setup::get_latest_prefs();
 
     let holofuel_address = match hdk::call(
         "holofuel-bridge",

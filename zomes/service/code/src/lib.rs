@@ -19,11 +19,13 @@ mod request;
 mod response;
 mod servicelog;
 mod invoice;
+mod setup;
 
 // see https://developer.holochain.org/api/0.0.4/hdk/ for info on using the hdk library
 
 define_zome! {
     entries: [
+        setup::setup_prefs_definition(),
         request::client_request_definition(),
         response::host_response_definition(),
         servicelog::service_log_definition(),
@@ -33,6 +35,11 @@ define_zome! {
     genesis: || { Ok(()) }
 
     functions: [
+        setup: {
+            inputs: |entry: setup::SetupPrefs|,
+            outputs: |result: ZomeApiResult<Address>|,
+            handler: setup::handle_setup
+        }
         log_request: {
             inputs: |entry: request::ClientRequest|,
             outputs: |result: ZomeApiResult<Address>|,
