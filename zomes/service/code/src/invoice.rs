@@ -11,7 +11,8 @@ use hdk::{
         dna::entry_types::Sharing,
         cas::content::Address,
         validation::EntryAction,
-        validation::EntryValidationData
+        validation::EntryValidationData,
+        time::Iso8601
     },
     AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PUBLIC_TOKEN,
 };
@@ -69,13 +70,13 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
     let holofuel_address = match hdk::call(
         "holofuel-bridge",
         "transactions",
-        "".into(),
+        Address::from(PUBLIC_TOKEN.to_string()),
         "request",
         json!({
-            "from": "xxx-undefined_address-xxx",
-            "amount": price_per_unit.unwrap(), // TODO: use the real value
+            "from": "fake-provider-address",
+            "amount": "1", //price_per_unit.unwrap(), // TODO: use the real value
             "notes": "service log", // TODO: put some nice notes
-            "deadline": "" // TODO: use some actual dealine
+            "deadline": Iso8601::from(0) // TODO: use some actual dealine
         }).into()
     ) {
         Ok(json) => serde_json::from_str(&json.to_string()).unwrap(),

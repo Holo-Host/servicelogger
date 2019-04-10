@@ -6,6 +6,7 @@ name = "LoggerTester"
 public_address = "<paste-address-here>"
 keystore_file = "<paste-key-location-here>"
 
+
 # -----------  DNA  -----------
 [[dnas]]
 id = "logger-dna"
@@ -18,15 +19,16 @@ file = "dist/holofuel.dna.json"
 hash = "QmZPz7JfxKHHdu6f1ywXU92xonkC9cNetUySWVJSp5F4DV"
 
 [[instances]]
-id = "fuel-instance"
+id = "holofuel-instance"
 dna = "fuel-dna"
 agent = "main-agent"
 [instances.logger]
 type = "simple"
-file = "fuel.log"
+# file = "fuel.log"
 [instances.storage]
-type = "file"
-path = "tmp-storage1"
+type = "memory"
+# type = "file"
+# path = "tmp-storage1"
 
 [[instances]]
 id = "logger-instance"
@@ -34,20 +36,21 @@ dna = "logger-dna"
 agent = "main-agent"
 [instances.logger]
 type = "simple"
-file = "logger.log"
+# file = "logger.log"
 [instances.storage]
-type = "file"
-path = "tmp-storage2"
+type = "memory"
+# type = "file"
+# path = "tmp-storage2"
 
 [[interfaces]]
 id = "websocket-interface"
 [interfaces.driver]
 type = "websocket"
-port = 8888
+port = 3000 
 [[interfaces.instances]]
 id = "logger-instance"
 [[interfaces.instances]]
-id = "fuel-instance"
+id = "holofuel-instance"
 
 [[interfaces]]
 id = "http-interface"
@@ -57,11 +60,11 @@ port = 4000
 [[interfaces.instances]]
 id = "logger-instance"
 [[interfaces.instances]]
-id = "fuel-instance"
+id = "holofuel-instance"
 
 [[bridges]]
 caller_id = "logger-instance"
-callee_id = "fuel-instance"
+callee_id = "holofuel-instance"
 handle = "holofuel-bridge"
 
 # -----------  UI  -----------
@@ -76,16 +79,16 @@ bundle = "main"
 port = 8800
 dna_interface = "websocket-interface"
 
-#[[ui_bundles]]
-#id = "main2"
-#root_dir = "./ui-agent2"
-#hash = "Qm000"
+[[ui_bundles]]
+id = "holofuel-ui"
+root_dir = "dist/ui"
+hash = "Qm000"
 
-#[[ui_interfaces]]
-#id = "ui-interface2"
-#bundle = "main2"
-#port = 9300
-#dna_interface = "websocket_interface"
+[[ui_interfaces]]
+id = "ui-interface2"
+bundle = "holofuel-ui"
+port = 8300
+dna_interface = "websocket-interface"
 
 # -----------  Networking  -----------
 # [network]
