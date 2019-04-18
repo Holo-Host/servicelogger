@@ -84,6 +84,7 @@ define_zome! {
 
     traits: {
         hc_public [
+            setup,
             log_request,
             get_request,
             log_response,

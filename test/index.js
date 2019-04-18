@@ -7,7 +7,6 @@ const dna = Config.dna(dnaPath, 'servicelogger')
 const agentApp = Config.agent("app")
 const appInstance = Config.instance(agentApp, dna)
 
-
 // WARNING: you need to place a 'holofuel.dna.json' file into the /dist folder (created by packaging the holofuel app)
 // https://github.com/Holo-Host/holofuel/
 const fuelPath = path.join(__dirname, "../dist/holofuel.dna.json")
@@ -15,19 +14,17 @@ const fuelDna = Config.dna(fuelPath, 'holofuel')
 const fuelApp= Config.agent("fuel")
 
 const fuelInstance = Config.instance(fuelApp, fuelDna)
+const hfBridge = Config.bridge('holofuel-bridge', appInstance, fuelInstance)
 
-const scenario = new Scenario([appInstance, fuelInstance], { debugLog: true })
+const scenario = new Scenario([appInstance, fuelInstance], { bridges: [hfBridge], debugLog: true })
 
 // Basic agentId check
 scenario.runTape('agentId', async (t, { app }) => {
   t.ok(app.agentId)
 })
 
-const payment_prefs = {
-  provider_address: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
+const setup_prefs = {
   dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  max_fuel_per_invoice: 1.0,
-  max_unpaid_value: 2.0,
 }
 
 const sample_request = {
@@ -64,6 +61,8 @@ const sample_response2 = {
 // 1. The client starts a new request for hosting, based on a call from the HC Interceptor
 scenario.runTape('can log a client request', async (t, { app }) => {
 
+  app.call("service", "setup", {"entry": setup_prefs})
+
   const addr = app.call("service", "log_request", {"entry" : sample_request})
 
   t.deepEqual(addr.Ok, "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4")
@@ -75,6 +74,8 @@ scenario.runTape('can log a client request', async (t, { app }) => {
 
 // 2. The Conductor wants to record a HostResponse, indicating some hosting was done
 scenario.runTape('can log a host response', async (t, { app }) => {
+  // performs initial setup
+  app.call("service", "setup", {"entry": setup_prefs})
 
   const request_addr = app.call("service", "log_request", {"entry" : sample_request})
 
@@ -114,7 +115,10 @@ scenario.runTape('can log a host response', async (t, { app }) => {
 
 // 3. With the client signature on that HostResponse, the Conductor creates a ServiceLog, that is a billable log
 scenario.runTape('can create a servicelog', async (t, { app }) => {
+  // performs initial setup
+  app.call("service", "setup", {"entry": setup_prefs})  
 
+  // Logs a sample request
   app.call("service", "log_request", {"entry" : sample_request})
 
   const addr = app.call("service", "log_response", {"entry" : sample_response1})
@@ -143,6 +147,10 @@ scenario.runTape('can create a servicelog', async (t, { app }) => {
 // 4. List all billable ServiceLogs. TODO: filter by start and end time (for pagination)
 scenario.runTape('log then list all servicelog', async (t, { app }) => {
 
+  // performs initial setup
+  app.call("service", "setup", {"entry": setup_prefs})  
+
+  // Logs a sample request
   app.call("service", "log_request", {"entry" : sample_request})
 
   // Log a first response & service_log
@@ -170,6 +178,10 @@ scenario.runTape('log then list all servicelog', async (t, { app }) => {
 // 5. Generate an invoice based on the selected ServiceLogs
 scenario.runTape('generating an invoice', async (t, { app, fuel }) => {
 
+  // performs initial setup
+  app.call("service", "setup", {"entry": setup_prefs})  
+
+  // Logs a sample request
   app.call("service", "log_request", {"entry" : sample_request})
 
   // Log a first response & service_log
@@ -190,7 +202,7 @@ scenario.runTape('generating an invoice', async (t, { app, fuel }) => {
 
   const result = app.call("service", "generate_invoice", {"price_per_unit": 1.0})
 
-  t.deepEqual(result, "xoxoxo")
+  t.deepEqual(result, { Ok: 'QmXdrWEDjTnQi84ucys7nc9c7tKzocRGDDn4aSy9ZAB7Pp' })
 })
 
 
