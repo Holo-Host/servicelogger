@@ -28,6 +28,13 @@ pub struct InvoicedLogs {
     holofuel_request: HashString,
     invoice_value: u64,
 }
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
+pub struct PaymentPrefs {
+    pub provider_address: Address,
+    pub dna_bundle_hash: HashString,
+    pub max_fuel_per_invoice: f64,
+    pub max_unpaid_value: f64,
+}
 
 pub fn invoiced_logs_definition() -> ValidatingEntryType {
     entry!(
@@ -62,10 +69,25 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
 }
 
 pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Address> {
-    hdk::debug(format!("********DEBUG******** instance {:?}", &hdk::THIS_INSTANCE))?;
 
-    // TODO: Bridge call to Hosting App to get payment parameters
-    setup::get_latest_prefs();
+    let dna_bundle_hash = match setup::get_latest_prefs() {
+        Some(dna_bundle_hash) => dna_bundle_hash,
+        None => return Err(ZomeApiError::Internal("DNA Bundle hash not configured!".to_string()))
+    };
+
+    hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge {:?}", &hdk::THIS_INSTANCE))?;
+    let payment_prefs: PaymentPrefs = match hdk::call(
+        "hosting-bridge",
+        "provider",
+        Address::from(PUBLIC_TOKEN.to_string()),
+        "get_app_details",
+        json!({
+            "app_hash": dna_bundle_hash,
+        }).into()
+    ) {
+        Ok(json) => serde_json::from_str(&json.to_string()).unwrap(),
+        Err(e) => return Err(e)
+    };
 
     let holofuel_address = match hdk::call(
         "holofuel-bridge",
@@ -73,7 +95,7 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
         Address::from(PUBLIC_TOKEN.to_string()),
         "request",
         json!({
-            "from": "fake-provider-address",
+            "from": payment_prefs.provider_address,
             "amount": "1", //price_per_unit.unwrap(), // TODO: use the real value
             "notes": "service log", // TODO: put some nice notes
             "deadline": Iso8601::from(0) // TODO: use some actual dealine

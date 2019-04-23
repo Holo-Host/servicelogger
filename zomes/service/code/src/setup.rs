@@ -19,7 +19,7 @@ use serde_json::{self};
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct SetupPrefs {
-    dna_bundle_hash: HashString 
+    pub dna_bundle_hash: HashString 
 }
 
 pub fn setup_prefs_definition() -> ValidatingEntryType {
