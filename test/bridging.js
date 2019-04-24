@@ -26,10 +26,6 @@ const hfBridge = Config.bridge('holofuel-bridge', appInstance, fuelInstance)
 const hhBridge = Config.bridge('hosting-bridge', appInstance, hostInstance)
 
 const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridges: [hfBridge, hhBridge], debugLog: true })
-
-const setup_prefs = {
-    dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  }
   
   const sample_request = {
     agent_id: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
@@ -88,17 +84,25 @@ scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
 
   // Perform Holohost setup
   host.call("provider", "register_as_provider", Provider_Doc);
+
+  // sleep to wait for link propagation
   sleep.sleep(5);
-  const app_address = await host.callSync("provider", "register_app", App_Config);
+  const app_address = host.call("provider", "register_app", App_Config).Ok;
   console.log("APP ADDRESS:: ", app_address);
 
   PaymentPref = {
-    app_hash: app_address.Ok,
+    app_hash: app_address,
     max_fuel_per_invoice: 2.0,
     max_unpaid_value: 10,
   }
+  
+  // sleep to wait for link propagation
   sleep.sleep(5);
   host.call("host","add_service_log_details", PaymentPref);
+
+  const setup_prefs = {
+    dna_bundle_hash: app_address,
+  }
 
   // performs initial setup
   app.call("service", "setup", {"entry": setup_prefs})
