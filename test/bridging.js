@@ -1,4 +1,5 @@
 const path = require('path')
+const sleep = require('sleep')
 const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
 Scenario.setTape(require('tape'))
 
@@ -25,8 +26,6 @@ const hfBridge = Config.bridge('holofuel-bridge', appInstance, fuelInstance)
 const hhBridge = Config.bridge('hosting-bridge', appInstance, hostInstance)
 
 const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridges: [hfBridge, hhBridge], debugLog: true })
-
-
 
 const setup_prefs = {
     dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
@@ -61,12 +60,48 @@ const setup_prefs = {
     response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
     host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
   }
-  
+
+  const Provider_Doc = {
+    provider_doc: {
+        kyc_proof: "DOC # QuarnnnnvltuenblergjasnvAfs"
+    }
+  }
+
+  const App_Config = {
+    app_bundle: {
+      happ_hash: "QuarnnnnvltuenblergjasnvAfs",
+      dna_list: ["QweAFioina","QtavsFdvva"]
+    },
+    app_details: {
+      name:"App Name",
+      details:"Details for this app",
+    },
+    domain_name: {
+      dns_name: "app2.holo.host"
+    }
+  }
+
+
+
 // 5. Generate an invoice based on the selected ServiceLogs
-scenario.runTape('generating an invoice', async (t, { app, fuel }) => {
+scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
+
+  // Perform Holohost setup
+  host.call("provider", "register_as_provider", Provider_Doc);
+  sleep.sleep(5);
+  const app_address = await host.callSync("provider", "register_app", App_Config);
+  console.log("APP ADDRESS:: ", app_address);
+
+  PaymentPref = {
+    app_hash: app_address.Ok,
+    max_fuel_per_invoice: 2.0,
+    max_unpaid_value: 10,
+  }
+  sleep.sleep(5);
+  host.call("host","add_service_log_details", PaymentPref);
 
   // performs initial setup
-  app.call("service", "setup", {"entry": setup_prefs})  
+  app.call("service", "setup", {"entry": setup_prefs})
 
   // Logs a sample request
   app.call("service", "log_request", {"entry" : sample_request})
@@ -89,7 +124,7 @@ scenario.runTape('generating an invoice', async (t, { app, fuel }) => {
 
   const result = app.call("service", "generate_invoice", {"price_per_unit": 1.0})
 
-  t.deepEqual(result, { Ok: 'QmXdrWEDjTnQi84ucys7nc9c7tKzocRGDDn4aSy9ZAB7Pp' })
+  t.deepEqual(result, { Ok: 'Qmby4AKM773kXEtSue49GA2LHFEcWMiVYT4mp1CNBUE6Ex' })
 })
 
 

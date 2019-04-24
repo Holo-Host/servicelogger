@@ -17,7 +17,7 @@ use hdk::{
     AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PUBLIC_TOKEN,
 };
 // use serde::Serialize;
-use serde_json::{self, json};
+use serde_json::{self, json, Value};
 
 use super::servicelog;
 use super::setup;
@@ -71,12 +71,13 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
 pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Address> {
 
     let dna_bundle_hash = match setup::get_latest_prefs() {
-        Some(dna_bundle_hash) => dna_bundle_hash,
+        Some(prefs) => prefs.dna_bundle_hash,
         None => return Err(ZomeApiError::Internal("DNA Bundle hash not configured!".to_string()))
     };
 
-    hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge {:?}", &hdk::THIS_INSTANCE))?;
-    let payment_prefs: PaymentPrefs = match hdk::call(
+    hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge"))?;
+    //TODO: instead of using PaymentPrefs entry, dig into JSON...
+    let json_out: Value = match hdk::call(
         "hosting-bridge",
         "provider",
         Address::from(PUBLIC_TOKEN.to_string()),
@@ -89,13 +90,15 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
         Err(e) => return Err(e)
     };
 
+    hdk::debug(format!("********DEBUG******** BRIDGING response from hosting-bridge {:?}", &json_out))?;
+
     let holofuel_address = match hdk::call(
         "holofuel-bridge",
         "transactions",
         Address::from(PUBLIC_TOKEN.to_string()),
         "request",
         json!({
-            "from": payment_prefs.provider_address,
+            "from": json_out["provider_address"],
             "amount": "1", //price_per_unit.unwrap(), // TODO: use the real value
             "notes": "service log", // TODO: put some nice notes
             "deadline": Iso8601::from(0) // TODO: use some actual dealine
