@@ -16,6 +16,8 @@ use hdk::{
     },
     AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PUBLIC_TOKEN,
 };
+// use std::convert::TryFrom;
+use std::convert::TryInto;
 // use serde::Serialize;
 use serde_json::{self, json};
 
@@ -29,7 +31,7 @@ pub struct InvoicedLogs {
     invoice_value: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct PaymentPref {
     pub provider_address: Address,
     pub dna_bundle_hash: HashString,
@@ -37,10 +39,10 @@ pub struct PaymentPref {
     pub max_unpaid_value: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct PaymentPrefResult {
     #[serde(rename="Ok")]
-    pub ok: PaymentPref
+    pub okay: PaymentPref
 }
 
 pub fn invoiced_logs_definition() -> ValidatingEntryType {
@@ -84,7 +86,7 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
 
     hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge"))?;
     //TODO: instead of using PaymentPrefs entry, dig into JSON...
-    let payment_pref_raw = hdk::call(
+    let raw = hdk::call(
         "hosting-bridge",
         "host",
         Address::from(PUBLIC_TOKEN.to_string()),
@@ -94,11 +96,18 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
         }).into()
     )?;
 
-    hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", payment_pref_raw))?;
+    hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", raw))?;
+     
+    let res : PaymentPref = raw.try_into()?;
 
-    let payment_pref_res: PaymentPrefResult = serde_json::from_str(payment_pref_raw.to_string().as_str()).unwrap();
-    hdk::debug(format!("********DEBUG******** BRIDGING response payment_pref {:?}", payment_pref_res))?;
-    let provider_address = &payment_pref_res.ok.provider_address;
+    hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from hosting-bridge {:?}", res))?;
+
+    let provider_address = res.provider_address; 
+
+    //let payment_pref_res: PaymentPrefResult = serde_json::from_str(payment_pref_raw.to_string().as_str()).unwrap();
+    //let json_out: Value = serde_json::from_str(raw.to_string().as_str()).unwrap();
+    //hdk::debug(format!("********DEBUG******** BRIDGING response payment_pref {:?}", json_out))?;
+    //let provider_address = &json_out["Ok"]["provider_address"];
     // let max_fuel_per_invoice = &json_out["Ok"]["app_bundle"]["payment_pref"]["entry"]["max_fuel_per_invoice"];
     // let max_unpaid_value = &json_out["Ok"]["app_bundle"]["payment_pref"]["entry"]["max_unpaid_value"];
     // let provider_address = &app_config_res.ok.payment_pref[0].entry.provider_address;
