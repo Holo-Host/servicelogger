@@ -83,11 +83,15 @@ const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridg
 scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
 
   // Perform Holohost setup
-  host.call("provider", "register_as_provider", Provider_Doc);
+  const register_pro = host.call("provider", "register_as_provider", Provider_Doc);
+  console.log(JSON.stringify(register_pro));
 
   // sleep to wait for link propagation
   sleep.sleep(5);
-  const app_address = host.call("provider", "register_app", App_Config).Ok;
+  const register_app = host.call("provider", "register_app", App_Config);
+  console.log(JSON.stringify(register_app));
+
+  const app_address = register_app.Ok;
   console.log("APP ADDRESS:: ", app_address);
 
   PaymentPref = {

@@ -111,9 +111,9 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
     // let max_fuel_per_invoice = &json_out["Ok"]["app_bundle"]["payment_pref"]["entry"]["max_fuel_per_invoice"];
     // let max_unpaid_value = &json_out["Ok"]["app_bundle"]["payment_pref"]["entry"]["max_unpaid_value"];
     // let provider_address = &app_config_res.ok.payment_pref[0].entry.provider_address;
-    // hdk::debug(format!("********DEBUG******** Provider address {:?}", &provider_address))?;
+    hdk::debug(format!("********DEBUG******** Provider address {:?}", &provider_address))?;
 
-    let holofuel_address = match hdk::call(
+    let holofuel_address_raw = hdk::call(
         "holofuel-bridge",
         "transactions",
         Address::from(PUBLIC_TOKEN.to_string()),
@@ -124,10 +124,13 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
             "notes": "service log", // TODO: put some nice notes
             "deadline": Iso8601::from(0) // TODO: use some actual dealine
         }).into()
-    ) {
-        Ok(json) => serde_json::from_str(&json.to_string()).unwrap(),
-        Err(e) => return Err(e)
-    };
+    )?;
+
+    hdk::debug(format!("********DEBUG******** BRIDGING RAW response from fuel-bridge {:?}", holofuel_address_raw))?;
+
+    let holofuel_address : Address = holofuel_address_raw.try_into()?;
+
+    hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}", holofuel_address))?;
 
     let logs_list = servicelog::list_servicelogs();
 
