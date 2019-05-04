@@ -45,7 +45,13 @@
             <option>QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</option>
             <option>QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb</option>
         </select>
-
+    <form id="setup">
+        <div class="form-group">
+            <label for="dna_bundle_hash">DNA Bundle Hash</label>
+            <input type="text" class="form-control" id="bundle_hash" placeholder="hash">
+        </div>
+        <button type="button" id="setup" class="btn btn-primary">Setup</button>
+    </form>
     <hr/>
 
     <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
@@ -213,7 +219,19 @@
                        }
                    })
                })
-   
+
+               $( "button#setup" ).on("click", function( e ) {
+                   e.preventDefault();
+                   const entry = {
+                       dna_bundle_hash: $("#setup #bundle_hash").val(),
+                       }
+                   console.log(entry);
+                   callZome(instance_id, 'service', 'setup')({
+                       "entry": entry,
+                   }).then(result => $('#alertMessage').html(result))
+                   $('#alertModal').modal("show")
+               });
+               
                $( "button#generate_invoice" ).on("click", function( e ) {
                    callZome(instance_id, 'service', 'generate_invoice')({"price_per_unit":1.0}).then(result => {
                        result = JSON.parse(result)
