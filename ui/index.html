@@ -210,7 +210,7 @@
                });
    
                $( "button#refresh_services" ).on("click", function( e ) {
-                   callZome(instance_id, 'service', 'list_servicelogs')({}).then(result => {
+                   callZome(instance_id, 'service', 'list_uninvoiced_servicelogs')({}).then(result => {
                        result = JSON.parse(result)
                        console.log(result)
                        $('select#servicelog_list').html("")

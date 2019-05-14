@@ -88,26 +88,32 @@ scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
 
   // sleep to wait for link propagation
   sleep.sleep(5);
+  // Add the holofuel account to the Provider
+  host.call("provider", "add_holofuel_account", {"account_number" : fuel.agentId});
+
   const register_app = host.call("provider", "register_app", App_Config);
   console.log(JSON.stringify(register_app));
 
   const app_address = register_app.Ok;
   console.log("APP ADDRESS:: ", app_address);
 
-  PaymentPref = {
+  payment_prefs = {
     app_hash: app_address,
     max_fuel_per_invoice: 2.0,
-    max_unpaid_value: 10,
+    max_unpaid_value: 10.0,
+//    price_per_unit: 1.0
   }
   
   // sleep to wait for link propagation
   sleep.sleep(5);
-  host.call("host","add_service_log_details", PaymentPref);
+
+  host.call("host","add_service_log_details", payment_prefs);
 
   const setup_prefs = {
     dna_bundle_hash: app_address,
   }
 
+  sleep.sleep(5);
   // performs initial setup
   app.call("service", "setup", {"entry": setup_prefs})
 
@@ -130,7 +136,7 @@ scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
   }
   app.call("service", "log_service", {"entry": service_log1})
 
-  const result = app.call("service", "generate_invoice", {"price_per_unit": 1.0})
+  const result = app.call("service", "generate_invoice", {})
 
   t.deepEqual(result, { Ok: 'Qmby4AKM773kXEtSue49GA2LHFEcWMiVYT4mp1CNBUE6Ex' })
 })

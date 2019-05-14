@@ -37,6 +37,7 @@ pub struct PaymentPref {
     pub dna_bundle_hash: HashString,
     pub max_fuel_per_invoice: f64,
     pub max_unpaid_value: f64,
+    pub price_per_unit: f64,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
@@ -77,15 +78,14 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
     }
 }
 
-pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Address> {
-
+pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
+    //** First get the payment prefs
     let dna_bundle_hash = match setup::get_latest_prefs() {
         Some(prefs) => prefs.dna_bundle_hash,
         None => return Err(ZomeApiError::Internal("DNA Bundle hash not configured!".to_string()))
     };
 
-    hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge"))?;
-    //TODO: instead of using PaymentPrefs entry, dig into JSON...
+    hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge for {:?}", dna_bundle_hash))?;
     let raw = hdk::call(
         "hosting-bridge",
         "host",
@@ -98,20 +98,15 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
 
     hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", raw))?;
      
-    let res : PaymentPref = raw.try_into()?;
+    let prefs : PaymentPref = raw.try_into()?;
 
-    hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from hosting-bridge {:?}", res))?;
+    hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from hosting-bridge {:?}", prefs))?;
 
-    let provider_address = res.provider_address; 
-
-    //let payment_pref_res: PaymentPrefResult = serde_json::from_str(payment_pref_raw.to_string().as_str()).unwrap();
-    //let json_out: Value = serde_json::from_str(raw.to_string().as_str()).unwrap();
-    //hdk::debug(format!("********DEBUG******** BRIDGING response payment_pref {:?}", json_out))?;
-    //let provider_address = &json_out["Ok"]["provider_address"];
-    // let max_fuel_per_invoice = &json_out["Ok"]["app_bundle"]["payment_pref"]["entry"]["max_fuel_per_invoice"];
-    // let max_unpaid_value = &json_out["Ok"]["app_bundle"]["payment_pref"]["entry"]["max_unpaid_value"];
-    // let provider_address = &app_config_res.ok.payment_pref[0].entry.provider_address;
-    hdk::debug(format!("********DEBUG******** Provider address {:?}", &provider_address))?;
+    //** Then calculate the invoice price
+    let logs_list = servicelog::list_uninvoiced_servicelogs();
+    
+    // TODO: calculate real invoice price
+    let invoice_price = 1.0 * logs_list.len() as f64;
 
     let holofuel_address_raw = hdk::call(
         "holofuel-bridge",
@@ -119,8 +114,8 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
         Address::from(PUBLIC_TOKEN.to_string()),
         "request",
         json!({
-            "from": provider_address,
-            "amount": "1", //price_per_unit.unwrap(), // TODO: use the real value
+            "from": prefs.provider_address,
+            "amount": invoice_price.to_string(), // TODO: use the real value
             "notes": "service log", // TODO: put some nice notes
             "deadline": Iso8601::from(0) // TODO: use some actual dealine
         }).into()
@@ -132,12 +127,10 @@ pub fn handle_generate_invoice(price_per_unit: Option<u64>) -> ZomeApiResult<Add
 
     hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}", holofuel_address))?;
 
-    let logs_list = servicelog::list_servicelogs();
-
     let entry = Entry::App("invoiced_logs".into(), InvoicedLogs{
             servicelog_list: logs_list,
             holofuel_request: holofuel_address,
-            invoice_value: price_per_unit.unwrap(),
+            invoice_value: invoice_price as u64,
     }.into());
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
