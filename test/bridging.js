@@ -1,6 +1,6 @@
 const path = require('path')
 const sleep = require('sleep')
-const { Config, Conductor, Scenario } = require('@holochain/holochain-nodejs')
+const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
 Scenario.setTape(require('tape'))
 
 const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
@@ -138,7 +138,7 @@ scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
 
   const result = app.call("service", "generate_invoice", {})
 
-  t.deepEqual(result, { Ok: 'Qmby4AKM773kXEtSue49GA2LHFEcWMiVYT4mp1CNBUE6Ex' })
+  t.deepEqual(result, { Ok: 'QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b' })
 })
 
 
