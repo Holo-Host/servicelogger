@@ -6,7 +6,6 @@ name = "LoggerTester"
 public_address = "<paste-address-here>"
 keystore_file = "<paste-key-location-here>"
 
-
 # -----------  DNA  -----------
 [[dnas]]
 id = "logger-dna"
@@ -17,6 +16,12 @@ hash = "QmZPz7JfxKHHdu6f1ywXU92xonkC9cNetUySWVJSp5F4DV"
 id = "fuel-dna"
 file = "dist/holofuel.dna.json"
 hash = "QmZPz7JfxKHHdu6f1ywXU92xonkC9cNetUySWVJSp5F4DV"
+
+[[dnas]]
+id = "host-dna"
+file = "dist/holohosting.dna.json"
+hash = "QmZPz7JfxKHHdu6f1ywXU92xonkC9cNetUySWVJSp5F4DV"
+
 
 [[instances]]
 id = "holofuel-instance"
@@ -42,6 +47,19 @@ type = "memory"
 # type = "file"
 # path = "tmp-storage2"
 
+[[instances]]
+id = "host-instance"
+dna = "host-dna"
+agent = "main-agent"
+[instances.logger]
+type = "simple"
+# file = "host.log"
+[instances.storage]
+type = "memory"
+# type = "file"
+# path = "tmp-storage2"
+
+
 [[interfaces]]
 id = "websocket-interface"
 [interfaces.driver]
@@ -51,6 +69,9 @@ port = 3000
 id = "logger-instance"
 [[interfaces.instances]]
 id = "holofuel-instance"
+[[interfaces.instances]]
+id = "host-instance"
+
 
 [[interfaces]]
 id = "http-interface"
@@ -61,11 +82,18 @@ port = 4000
 id = "logger-instance"
 [[interfaces.instances]]
 id = "holofuel-instance"
+[[interfaces.instances]]
+id = "host-instance"
 
 [[bridges]]
 caller_id = "logger-instance"
 callee_id = "holofuel-instance"
 handle = "holofuel-bridge"
+
+[[bridges]]
+caller_id = "logger-instance"
+callee_id = "host-instance"
+handle = "hosting-bridge"
 
 # -----------  UI  -----------
 [[ui_bundles]]
@@ -81,13 +109,24 @@ dna_interface = "websocket-interface"
 
 [[ui_bundles]]
 id = "holofuel-ui"
-root_dir = "dist/ui"
+root_dir = "dist/holofuel-ui"
 hash = "Qm000"
 
 [[ui_interfaces]]
 id = "ui-interface2"
 bundle = "holofuel-ui"
 port = 8300
+dna_interface = "websocket-interface"
+
+[[ui_bundles]]
+id = "holohost-ui"
+root_dir = "dist/holohost-ui"
+hash = "Qm001"
+
+[[ui_interfaces]]
+id = "ui-interface3"
+bundle = "holohost-ui"
+port = 8400
 dna_interface = "websocket-interface"
 
 # -----------  Networking  -----------

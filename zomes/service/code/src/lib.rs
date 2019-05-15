@@ -70,13 +70,13 @@ define_zome! {
             outputs: |result: ZomeApiResult<Option<Entry>>|,
             handler: servicelog::handle_get_service
         }
-        list_servicelogs: {
+        list_uninvoiced_servicelogs: {
             inputs: | |,
             outputs: |result: Vec<Address>|,
-            handler: servicelog::handle_list_servicelogs
+            handler: servicelog::handle_list_uninvoiced_servicelogs
         }
         generate_invoice: {
-            inputs: |price_per_unit: Option<u64>|,
+            inputs: | |,
             outputs: |result: ZomeApiResult<Address>|,
             handler: invoice::handle_generate_invoice
         }
@@ -84,13 +84,14 @@ define_zome! {
 
     traits: {
         hc_public [
+            setup,
             log_request,
             get_request,
             log_response,
             get_response,
             log_service,
             get_service,
-            list_servicelogs,
+            list_uninvoiced_servicelogs,
             generate_invoice
         ]
     }

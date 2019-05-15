@@ -26,11 +26,11 @@ pub struct HostingStats {
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct HostResponse {
-    request_hash: HashString,
-    hosting_stats: HostingStats,
-    response_data_hash: HashString,
-    response_log: String, // not included into the signature
-    host_signature: HashString, // signed request_hash + response_data_hash + hosting_stats
+    pub request_hash: HashString,
+    pub hosting_stats: HostingStats,
+    pub response_data_hash: HashString,
+    pub response_log: String, // not included into the signature
+    pub host_signature: HashString, // signed request_hash + response_data_hash + hosting_stats
 }
 
 pub fn host_response_definition() -> ValidatingEntryType {

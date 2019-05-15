@@ -16,6 +16,8 @@ use hdk::{
 };
 // use serde::Serialize;
 // use serde_json::{self, json};
+use super::request;
+use super::response;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
@@ -67,14 +69,21 @@ pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {
     hdk::get_entry(&address)
 }
 
-pub fn list_servicelogs() -> Vec<Address> {
+fn _get_original_request(address: Address) -> ZomeApiResult<request::ClientRequest> {
+    let log : ServiceLog = hdk::utils::get_as_type(address)?;
+    let response : response::HostResponse = hdk::utils::get_as_type(log.response_hash)?;
+    hdk::utils::get_as_type(response.request_hash)
+}
+
+pub fn list_uninvoiced_servicelogs() -> Vec<Address> {
+    // TODO: filter out invoiced ones
     match hdk::query("service_log".into(), 0, 0) {
         Ok(results) => results,
         _ => vec![],
     }
 }
 
-pub fn handle_list_servicelogs() -> Vec<Address> {
-    list_servicelogs()
+pub fn handle_list_uninvoiced_servicelogs() -> Vec<Address> {
+    list_uninvoiced_servicelogs()
 }
 
