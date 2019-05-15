@@ -77,14 +77,11 @@ const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridg
     }
   }
 
-
-
 // 5. Generate an invoice based on the selected ServiceLogs
 scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
 
   // Perform Holohost setup
   const register_pro = host.call("provider", "register_as_provider", Provider_Doc);
-  console.log(JSON.stringify(register_pro));
 
   // sleep to wait for link propagation
   sleep.sleep(5);
@@ -92,10 +89,9 @@ scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
   host.call("provider", "add_holofuel_account", {holofuel_account_details:{"account_number" : fuel.agentId}});
 
   const register_app = host.call("provider", "register_app", App_Config);
-  console.log(JSON.stringify(register_app));
 
   const app_address = register_app.Ok;
-  console.log("APP ADDRESS:: ", app_address);
+  // console.log("APP ADDRESS:: ", app_address);
 
   payment_prefs = {
     app_hash: app_address,

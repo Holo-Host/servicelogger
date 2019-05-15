@@ -85,7 +85,7 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
         None => return Err(ZomeApiError::Internal("DNA Bundle hash not configured!".to_string()))
     };
 
-    hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge for {:?}", dna_bundle_hash))?;
+    // hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge for {:?}", dna_bundle_hash))?;
     let raw = hdk::call(
         "hosting-bridge",
         "host",
@@ -96,11 +96,11 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
         }).into()
     )?;
 
-    hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", raw))?;
+    // hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", raw))?;
      
     let prefs : PaymentPref = raw.try_into()?;
 
-    hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from hosting-bridge {:?}", prefs))?;
+    // hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from hosting-bridge {:?}", prefs))?;
 
     //** Then calculate the invoice price
     let logs_list = servicelog::list_uninvoiced_servicelogs();
@@ -121,11 +121,11 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
         }).into()
     )?;
 
-    hdk::debug(format!("********DEBUG******** BRIDGING RAW response from fuel-bridge {:?}", holofuel_address_raw))?;
+    // hdk::debug(format!("********DEBUG******** BRIDGING RAW response from fuel-bridge {:?}", holofuel_address_raw))?;
 
     let holofuel_address : Address = holofuel_address_raw.try_into()?;
 
-    hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}", holofuel_address))?;
+    // hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}", holofuel_address))?;
 
     let entry = Entry::App("invoiced_logs".into(), InvoicedLogs{
             servicelog_list: logs_list,
