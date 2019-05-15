@@ -1,6 +1,6 @@
 const path = require('path')
 const sleep = require('sleep')
-const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
+const { Config, Conductor, Scenario } = require('@holochain/holochain-nodejs')
 Scenario.setTape(require('tape'))
 
 const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
@@ -26,14 +26,14 @@ const hfBridge = Config.bridge('holofuel-bridge', appInstance, fuelInstance)
 const hhBridge = Config.bridge('hosting-bridge', appInstance, hostInstance)
 
 const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridges: [hfBridge, hhBridge], debugLog: true })
-  
+
   const sample_request = {
     agent_id: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
     zome_call_spec: "blog/create_post",
     dna_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
     client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk",
   }
-  
+
   const sample_response1 = {
     request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
     hosting_stats: {
@@ -45,7 +45,7 @@ const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridg
     response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
     host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
   }
-  
+
   const sample_response2 = {
     request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
     hosting_stats: {
@@ -89,7 +89,7 @@ scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
   // sleep to wait for link propagation
   sleep.sleep(5);
   // Add the holofuel account to the Provider
-  host.call("provider", "add_holofuel_account", {"account_number" : fuel.agentId});
+  host.call("provider", "add_holofuel_account", {holofuel_account_details:{"account_number" : fuel.agentId}});
 
   const register_app = host.call("provider", "register_app", App_Config);
   console.log(JSON.stringify(register_app));
@@ -101,9 +101,9 @@ scenario.runTape('generating an invoice', async (t, { app, host, fuel }) => {
     app_hash: app_address,
     max_fuel_per_invoice: 2.0,
     max_unpaid_value: 10.0,
-//    price_per_unit: 1.0
+    price_per_unit: 1.0
   }
-  
+
   // sleep to wait for link propagation
   sleep.sleep(5);
 
