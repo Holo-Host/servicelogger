@@ -40,11 +40,6 @@ pub struct PaymentPref {
     pub price_per_unit: f64,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
-pub struct PaymentPrefResult {
-    #[serde(rename="Ok")]
-    pub okay: PaymentPref
-}
 
 pub fn invoiced_logs_definition() -> ValidatingEntryType {
     entry!(
@@ -77,6 +72,8 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
         }
     }
 }
+
+
 
 pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
     //** First get the payment prefs
