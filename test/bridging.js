@@ -108,10 +108,10 @@ function perform_hosting_setup(host, fuel) {
 // 5. Generate an invoice based on the selected ServiceLogs
 scenario.runTape('testing invoice generation', async (t, { app, host, fuel }) => {
 
-  const app_address = perform_hosting_setup(host, fuel);
+  const happ_address = perform_hosting_setup(host, fuel);
 
   const setup_prefs = {
-    dna_bundle_hash: app_address,
+    dna_bundle_hash: happ_address,
   }
 
   // performs initial setup
@@ -129,7 +129,7 @@ scenario.runTape('testing invoice generation', async (t, { app, host, fuel }) =>
   app.call("service", "log_service", {"entry": service_log1})
 
   // Check we have no invoice yet
-  var invoices = app.call("service", "get_unpaid_invoices", {})
+  var invoices = app.call("service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: [] })
 
   // Log a second response & service_log **triggering** an invoice generation (passed threshold)
@@ -141,7 +141,7 @@ scenario.runTape('testing invoice generation', async (t, { app, host, fuel }) =>
   app.call("service", "log_service", {"entry": service_log1})
 
   // Now we should have an invoice
-  invoices = app.call("service", "get_unpaid_invoices", {})
+  invoices = app.call("service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: ['QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b'] })
 })
 
@@ -193,7 +193,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
   app.call("service", "log_service", {"entry": service_log1})
 
   // Check we have no invoice yet
-  var invoices = app.call("service", "get_unpaid_invoices", {})
+  var invoices = app.call("service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: [] })
 
   // Log a second response & service_log **triggering** an invoice generation (passed threshold)
@@ -205,7 +205,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
   app.call("service", "log_service", {"entry": service_log1})
 
   // Now we should have an invoice
-  invoices = app.call("service", "get_unpaid_invoices", {})
+  invoices = app.call("service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: ['QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b'] })
 
   // Check if payment status is still HOSTING

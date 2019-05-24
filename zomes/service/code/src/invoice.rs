@@ -40,6 +40,13 @@ pub struct PaymentPref {
     pub price_per_unit: f64,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
+pub struct PaymentStatus {
+    pub unpaid_value: f64,
+    pub max_unpaid_value: f64,
+    pub max_fuel_per_invoice: f64,
+    pub situation: f64,
+}
 
 pub fn invoiced_logs_definition() -> ValidatingEntryType {
     entry!(
@@ -74,9 +81,21 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
 }
 
 
+pub fn handle_list_unpaid_invoices() -> ZomeApiResult<Vec<Address>> {
+    Ok(vec!["".into()])
+}
+
+pub fn handle_get_payment_status() -> ZomeApiResult<PaymentStatus> {
+    Ok(PaymentStatus{
+        unpaid_value: 0.0,
+        max_unpaid_value: 0.0,
+        max_fuel_per_invoice: 0.0,
+        situation: 0.0,
+    }.into())
+}
 
 pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
-    //** First get the payment prefs
+    //** First get the dna_bundle_hash
     let dna_bundle_hash = match setup::get_latest_prefs() {
         Some(prefs) => prefs.dna_bundle_hash,
         None => return Err(ZomeApiError::Internal("DNA Bundle hash not configured!".to_string()))
