@@ -128,16 +128,16 @@ pub fn handle_get_payment_status() -> ZomeApiResult<PaymentStatus> {
     // Bridge to Hosting App to get standard values
     let prefs  = get_payment_prefs()?;
 
-    let unpaid = get_unpaid_value();
+    let unpaid_value = get_unpaid_value();
 
     let mut situation = HostingSituation::Hosting;
 
-    if unpaid >= prefs.max_unpaid_value {
+    if unpaid_value >= prefs.max_unpaid_value {
         situation = HostingSituation::Stopped;
     }
 
     Ok(PaymentStatus{
-        unpaid_value: unpaid,
+        unpaid_value,
         max_unpaid_value: prefs.max_unpaid_value,
         max_fuel_per_invoice: prefs.max_fuel_per_invoice,
         situation,
