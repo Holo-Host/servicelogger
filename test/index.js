@@ -130,6 +130,8 @@ scenario.runTape('can create a servicelog', async (t, { app }) => {
 
   const addr2 = app.call("service", "log_service", {"entry": service_log})
 
+  console.log("********************DEBUG:"+JSON.stringify(addr2))
+
   const result = app.call("service", "get_service", {"address": addr2.Ok})
 
   t.deepEqual(result, { Ok: { App: [ 'service_log', JSON.stringify(service_log) ] } })

@@ -18,7 +18,7 @@ use hdk::{
 // use serde_json::{self, json};
 use super::request;
 use super::response;
-// use super::invoice;
+use super::invoice;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
@@ -61,9 +61,15 @@ fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), 
 pub fn handle_log_service(entry: ServiceLog) -> ZomeApiResult<Address> {
     let entry = Entry::App("service_log".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
-    Ok(address)
-    // TODO: Check payment prefs via bridge to Hosting app, and see if needed to generate an invoice automatically
 
+    // Check payment prefs via bridge to Hosting app, and see if needed to generate an invoice automatically
+    let prefs = invoice::get_payment_prefs()?;
+    let outstanding_value = invoice::calculate_invoice_price(list_uninvoiced_servicelogs());
+    if outstanding_value >= prefs.max_fuel_per_invoice {
+        invoice::handle_generate_invoice()?;
+    }
+
+    return Ok(address);
 }
 
 pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {

@@ -212,7 +212,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
   var payment_status = app.call("service", "get_payment_status", {}).Ok;
   t.deepEqual(payment_status.unpaid_value, 2.0);
   t.deepEqual(payment_status.max_unpaid_value, 4.0);
-  t.deepEqual(payment_status.situation, "HOSTING");
+  t.deepEqual(payment_status.situation, "Hosting");
 
   // Log two more resposes **triggering** another invoice generation
   const addr3 = app.call("service", "log_response", {"entry" : sample_response3});
@@ -230,7 +230,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
 
   payment_status = app.call("service", "get_payment_status", {}).Ok;
   t.deepEqual(payment_status.unpaid_value, 4.0);
-  t.deepEqual(payment_status.situation, "STOPPED");
+  t.deepEqual(payment_status.situation, "Stopped");
 
 })
 

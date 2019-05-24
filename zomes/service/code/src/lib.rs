@@ -102,7 +102,9 @@ define_zome! {
             log_service,
             get_service,
             list_uninvoiced_servicelogs,
-            generate_invoice
+            generate_invoice,
+            list_unpaid_invoices,
+            get_payment_status
         ]
     }
 }

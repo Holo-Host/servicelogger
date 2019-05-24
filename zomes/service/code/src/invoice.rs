@@ -25,6 +25,12 @@ use super::servicelog;
 use super::setup;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
+pub enum HostingSituation {
+    Hosting,
+    Stopped
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct InvoicedLogs {
     servicelog_list: Vec<HashString>,
     holofuel_request: HashString,
@@ -45,7 +51,7 @@ pub struct PaymentStatus {
     pub unpaid_value: f64,
     pub max_unpaid_value: f64,
     pub max_fuel_per_invoice: f64,
-    pub situation: f64,
+    pub situation: HostingSituation,
 }
 
 pub fn invoiced_logs_definition() -> ValidatingEntryType {
@@ -80,22 +86,66 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
     }
 }
 
+fn is_paid(_invoiced_logs: InvoicedLogs) -> bool {
+    // Should bridge to Holofuel to get payment status
+    false
+}
+
+fn list_unpaid_invoices() -> Vec<Address> {
+    let invoices = match hdk::query("invoiced_logs".into(), 0, 0) {
+        Ok(results) => results,
+        _ => vec![],
+    };
+
+    let mut results: Vec<Address> = vec![];
+    for addr in invoices {
+        let inv_logs: InvoicedLogs = hdk::utils::get_as_type(addr.to_string().into()).unwrap();
+        if is_paid(inv_logs) {
+            results.push(addr.to_string().into());
+        }
+    }
+
+    return results;
+}
+
+fn get_unpaid_value() -> f64 {
+    let invoices = list_unpaid_invoices();
+    let mut value: f64 = 0.0;
+
+    for addr in invoices {
+        let inv_logs: InvoicedLogs = hdk::utils::get_as_type(addr.to_string().into()).unwrap();
+        value += inv_logs.invoice_value as f64;
+    }
+
+    return value;
+}
 
 pub fn handle_list_unpaid_invoices() -> ZomeApiResult<Vec<Address>> {
-    Ok(vec!["".into()])
+    Ok(list_unpaid_invoices())
 }
 
 pub fn handle_get_payment_status() -> ZomeApiResult<PaymentStatus> {
+    // Bridge to Hosting App to get standard values
+    let prefs  = get_payment_prefs()?;
+
+    let unpaid = get_unpaid_value();
+
+    let mut situation = HostingSituation::Hosting;
+
+    if unpaid >= prefs.max_unpaid_value {
+        situation = HostingSituation::Stopped;
+    }
+
     Ok(PaymentStatus{
-        unpaid_value: 0.0,
-        max_unpaid_value: 0.0,
-        max_fuel_per_invoice: 0.0,
-        situation: 0.0,
+        unpaid_value: unpaid,
+        max_unpaid_value: prefs.max_unpaid_value,
+        max_fuel_per_invoice: prefs.max_fuel_per_invoice,
+        situation,
     }.into())
 }
 
-pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
-    //** First get the dna_bundle_hash
+pub fn get_payment_prefs() -> ZomeApiResult<PaymentPref> {
+    //** First get the latest configured dna_bundle_hash
     let dna_bundle_hash = match setup::get_latest_prefs() {
         Some(prefs) => prefs.dna_bundle_hash,
         None => return Err(ZomeApiError::Internal("DNA Bundle hash not configured!".to_string()))
@@ -111,18 +161,25 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
             "app_hash": dna_bundle_hash,
         }).into()
     )?;
-
     // hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", raw))?;
-     
+
     let prefs : PaymentPref = raw.try_into()?;
 
-    // hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from hosting-bridge {:?}", prefs))?;
+    Ok(prefs)
+}
 
-    //** Then calculate the invoice price
+pub fn calculate_invoice_price(logs_list: Vec<Address>) -> f64 {
+    return 1.0 * logs_list.len() as f64;
+}
+
+pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
+    let prefs  = get_payment_prefs()?;
+
+    //** Calculate the invoice price
     let logs_list = servicelog::list_uninvoiced_servicelogs();
     
     // TODO: calculate real invoice price
-    let invoice_price = 1.0 * logs_list.len() as f64;
+    let invoice_price = calculate_invoice_price(logs_list.clone());
 
     let holofuel_address_raw = hdk::call(
         "holofuel-bridge",
@@ -151,3 +208,4 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
 }
+
