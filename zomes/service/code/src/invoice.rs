@@ -127,9 +127,7 @@ pub fn handle_list_unpaid_invoices() -> ZomeApiResult<Vec<Address>> {
 pub fn handle_get_payment_status() -> ZomeApiResult<PaymentStatus> {
     // Bridge to Hosting App to get standard values
     let prefs  = get_payment_prefs()?;
-
     let unpaid_value = get_unpaid_value();
-
     let mut situation = HostingSituation::Hosting;
 
     if unpaid_value >= prefs.max_unpaid_value {
