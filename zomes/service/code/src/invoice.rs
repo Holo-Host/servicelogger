@@ -86,9 +86,9 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
     }
 }
 
-fn is_paid(_invoiced_logs: InvoicedLogs) -> bool {
+fn is_unpaid(_invoiced_logs: InvoicedLogs) -> bool {
     // Should bridge to Holofuel to get payment status
-    false
+    true
 }
 
 fn list_unpaid_invoices() -> Vec<Address> {
@@ -100,7 +100,7 @@ fn list_unpaid_invoices() -> Vec<Address> {
     let mut results: Vec<Address> = vec![];
     for addr in invoices {
         let inv_logs: InvoicedLogs = hdk::utils::get_as_type(addr.to_string().into()).unwrap();
-        if is_paid(inv_logs) {
+        if is_unpaid(inv_logs) {
             results.push(addr.to_string().into());
         }
     }
@@ -166,19 +166,24 @@ pub fn get_payment_prefs() -> ZomeApiResult<PaymentPref> {
     Ok(prefs)
 }
 
-pub fn calculate_invoice_price(logs_list: Vec<Address>) -> f64 {
+pub fn calculate_invoice_price(logs_list: &Vec<Address>) -> f64 {
     return 1.0 * logs_list.len() as f64;
 }
 
-pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
-    let prefs  = get_payment_prefs()?;
-
-    //** Calculate the invoice price
+pub fn handle_generate_invoice() -> ZomeApiResult<Option<Address>> {
+    // Check payment prefs via bridge to Hosting app, and see if needed to generate an invoice automatically
+    let prefs = get_payment_prefs()?;
+    // Gets uninvoiced logs
     let logs_list = servicelog::list_uninvoiced_servicelogs();
-    
     // TODO: calculate real invoice price
-    let invoice_price = calculate_invoice_price(logs_list.clone());
+    let outstanding_value = calculate_invoice_price(&logs_list);
 
+    // If not enough outstanding value to generate an invoice, return None
+    if outstanding_value < prefs.max_fuel_per_invoice {
+        return Ok(None);
+    }
+
+    // Otherwise generate the invoice
     let holofuel_address_raw = hdk::call(
         "holofuel-bridge",
         "transactions",
@@ -186,7 +191,7 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
         "request",
         json!({
             "from": prefs.provider_address,
-            "amount": invoice_price.to_string(), // TODO: use the real value
+            "amount": outstanding_value.to_string(),
             "notes": "service log", // TODO: put some nice notes
             "deadline": Iso8601::from(0) // TODO: use some actual dealine
         }).into()
@@ -201,9 +206,9 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Address> {
     let entry = Entry::App("invoiced_logs".into(), InvoicedLogs{
             servicelog_list: logs_list,
             holofuel_request: holofuel_address,
-            invoice_value: invoice_price as u64,
+            invoice_value: outstanding_value as u64,
     }.into());
     let address = hdk::commit_entry(&entry)?;
-    Ok(address)
+    Ok(Some(address))
 }
 

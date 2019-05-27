@@ -77,7 +77,7 @@ define_zome! {
         }
         generate_invoice: {
             inputs: | |,
-            outputs: |result: ZomeApiResult<Address>|,
+            outputs: |result: ZomeApiResult<Option<Address>>|,
             handler: invoice::handle_generate_invoice
         }
         list_unpaid_invoices: {

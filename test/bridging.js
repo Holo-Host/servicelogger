@@ -108,7 +108,7 @@ function perform_hosting_setup(host, fuel) {
 // 5. Generate an invoice based on the selected ServiceLogs
 scenario.runTape('testing invoice generation', async (t, { app, host, fuel }) => {
 
-  const happ_address = perform_hosting_setup(host, fuel);
+  const happ_address = await perform_hosting_setup(host, fuel);
 
   const setup_prefs = {
     dna_bundle_hash: happ_address,
@@ -128,17 +128,28 @@ scenario.runTape('testing invoice generation', async (t, { app, host, fuel }) =>
   }
   app.call("service", "log_service", {"entry": service_log1})
 
+  // Check if an invoice should be generated (passed threshold)
+  app.call("service", "generate_invoice", {})
+
+  // No invoice should have been generated yet
+  invoices = app.call("service", "list_unpaid_invoices", {})
+  t.deepEqual(invoices, { Ok: [] })
+
   // Check we have no invoice yet
   var invoices = app.call("service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: [] })
 
-  // Log a second response & service_log **triggering** an invoice generation (passed threshold)
+  // Log a second response & service_log
   const addr2 = app.call("service", "log_response", {"entry" : sample_response2})
   const service_log2 = {
     response_hash: addr2.Ok,
     client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
   }
   app.call("service", "log_service", {"entry": service_log1})
+
+  // Check if an invoice should be generated (passed threshold)
+  invoice = await app.callSync("service", "generate_invoice", {})
+  t.deepEqual(invoice, { Ok: 'QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b' })
 
   // Now we should have an invoice
   invoices = app.call("service", "list_unpaid_invoices", {})
@@ -172,7 +183,7 @@ const sample_response4 = {
 
 // 6. Checks if the unpaid value is greater than the PaymentPrefs, then will alert envoy over `get_payment_status` API
 scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
-  const app_address = perform_hosting_setup(host, fuel);
+  const app_address = await perform_hosting_setup(host, fuel);
 
   const setup_prefs = {
     dna_bundle_hash: app_address,
@@ -193,6 +204,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
   app.call("service", "log_service", {"entry": service_log1})
 
   // Check we have no invoice yet
+  app.call("service", "generate_invoice", {})
   var invoices = app.call("service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: [] })
 
@@ -205,6 +217,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
   app.call("service", "log_service", {"entry": service_log1})
 
   // Now we should have an invoice
+  app.call("service", "generate_invoice", {})
   invoices = app.call("service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: ['QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b'] })
 
@@ -228,8 +241,9 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
     }
   });
 
+  app.call("service", "generate_invoice", {})
   payment_status = app.call("service", "get_payment_status", {}).Ok;
-  t.deepEqual(payment_status.unpaid_value, 4.0);
+  t.deepEqual(payment_status.unpaid_value, 6.0);
   t.deepEqual(payment_status.situation, "Stopped");
 
 })
