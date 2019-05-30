@@ -14,10 +14,15 @@ use hdk::{
         validation::EntryValidationData,
         time::Iso8601
     },
+    holochain_wasm_utils::api_serialization::{
+        query::{
+            QueryArgsOptions, QueryResult,
+        },
+    },
     AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PUBLIC_TOKEN,
 };
 // use std::convert::TryFrom;
-use std::convert::TryInto;
+use std::convert::{ TryInto, TryFrom };
 // use serde::Serialize;
 use serde_json::{self, json};
 
@@ -87,48 +92,62 @@ fn validate_invoiced_logs(context: hdk::EntryValidationData<InvoicedLogs>) -> Re
     }
 }
 
-fn is_unpaid(_invoiced_logs: InvoicedLogs) -> bool {
+fn is_unpaid(_invoiced_logs: &InvoicedLogs) -> bool {
     // Should bridge to Holofuel to get payment status
     true
 }
 
-fn list_unpaid_invoices() -> Vec<Address> {
-    let invoices = match hdk::query("invoiced_logs".into(), 0, 0) {
-        Ok(results) => results,
-        _ => vec![],
-    };
+fn list_unpaid_invoices() -> Result<Vec<(Address, InvoicedLogs)>, HolochainError> {
+    let addr_entry_vec = match hdk::query_result(
+        "invoiced_logs".into(),
+        QueryArgsOptions{ entries: true, ..Default::default() }
+    )? {
+        QueryResult::Entries(addr_entry_vec) => Ok(addr_entry_vec),
+        _ => Err(HolochainError::ErrorGeneric(format!("Unexpected hdk::query response for invoiced_logs"))),
+    }?;
 
-    let mut results: Vec<Address> = vec![];
-    for addr in invoices {
-        let inv_logs: InvoicedLogs = hdk::utils::get_as_type(addr.to_string().into()).unwrap();
-        if is_unpaid(inv_logs) {
-            results.push(addr.to_string().into());
-        }
-    }
-
-    return results;
+    addr_entry_vec
+        .iter()
+        .map(|(addr, entry)| {
+            match entry {
+                Entry::App(_entry_type, entry_value)
+                    => Ok((addr.to_owned(), InvoicedLogs::try_from(entry_value)?)),
+                unknown
+                    => Err(HolochainError::ErrorGeneric(format!(
+                        "Unexpected hdk::query response entry type for invoiced_logs: {:?}", &unknown))),
+            }
+        })
+        .filter(|a_il_maybe| {
+            match a_il_maybe {
+                Ok((_addr, inv_log)) => is_unpaid(&inv_log),
+                Err(_) => true,
+            }
+        })
+        .collect::<Result<Vec<(Address, InvoicedLogs)>, HolochainError>>()
 }
 
-fn get_unpaid_value() -> f64 {
-    let invoices = list_unpaid_invoices();
+fn get_unpaid_value() -> Result<f64, HolochainError> {
+    let invoices = list_unpaid_invoices()?;
     let mut value: f64 = 0.0;
 
-    for addr in invoices {
-        let inv_logs: InvoicedLogs = hdk::utils::get_as_type(addr.to_string().into()).unwrap();
+    for (_addr, inv_logs) in invoices {
         value += inv_logs.invoice_value as f64;
     }
 
-    return value;
+    return Ok(value);
 }
 
 pub fn handle_list_unpaid_invoices() -> ZomeApiResult<Vec<Address>> {
-    Ok(list_unpaid_invoices())
+    Ok(list_unpaid_invoices()?
+       .iter()
+       .map(|(addr, _inv_log)| addr.to_owned())
+       .collect())
 }
 
 pub fn handle_get_payment_status() -> ZomeApiResult<PaymentStatus> {
     // Bridge to Hosting App to get standard values
     let prefs  = get_payment_prefs()?;
-    let unpaid_value = get_unpaid_value();
+    let unpaid_value = get_unpaid_value()?;
     let mut situation = HostingSituation::Hosting;
 
     if unpaid_value >= prefs.max_unpaid_value {
