@@ -149,13 +149,12 @@ scenario.runTape('testing invoice generation', async (t, { app, host, fuel }) =>
 
   // Check if an invoice should be generated (passed threshold)
   invoice = await app.callSync("service", "generate_invoice", {})
-  t.deepEqual(invoice, { Ok: 'QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b' })
+  t.deepEqual(invoice, { Ok: 'QmP8GBjQi1Ehm8wsXfkv66oarDAd1xFVBF7TVgzyKjfACB' })
 
   // Now we should have an invoice
   invoices = app.call("service", "list_unpaid_invoices", {})
-  t.deepEqual(invoices, { Ok: ['QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b'] })
+  t.deepEqual(invoices, { Ok: ['QmP8GBjQi1Ehm8wsXfkv66oarDAd1xFVBF7TVgzyKjfACB'] })
 })
-
 
 const sample_response3 = {
   request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
@@ -219,7 +218,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
   // Now we should have an invoice
   app.call("service", "generate_invoice", {})
   invoices = app.call("service", "list_unpaid_invoices", {})
-  t.deepEqual(invoices, { Ok: ['QmeiBEvq43yd77PS1jyEPZAnckCvrbETGNAp4wcHbEMv7b'] })
+  t.deepEqual(invoices, { Ok: ['QmP8GBjQi1Ehm8wsXfkv66oarDAd1xFVBF7TVgzyKjfACB'] })
 
   // Check if payment status is still HOSTING
   var payment_status = app.call("service", "get_payment_status", {}).Ok;

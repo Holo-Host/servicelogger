@@ -32,9 +32,10 @@ pub enum HostingSituation {
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct InvoicedLogs {
-    servicelog_list: Vec<HashString>,
-    holofuel_request: HashString,
-    invoice_value: u64,
+    pub servicelog_list: Vec<HashString>,
+    pub holofuel_request: HashString,
+    pub invoice_value: u64,
+    pub last_invoiced_log: usize,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
@@ -166,6 +167,20 @@ pub fn get_payment_prefs() -> ZomeApiResult<PaymentPref> {
     Ok(prefs)
 }
 
+pub fn get_latest_invoice() -> Option<InvoicedLogs> {
+    // Search the local chain for all InvoicedLogs
+    let invoices_list: Vec<Address> = match hdk::query("invoiced_logs".into(), 0, 0) {
+        Ok(results) => results,
+        _ => vec![],
+    };
+
+    match invoices_list.last() {
+        Some(last) => Some(hdk::utils::get_as_type(last.to_string().into()).unwrap()),
+        None => None
+    }
+
+}
+
 pub fn calculate_invoice_price(logs_list: &Vec<Address>) -> f64 {
     return 1.0 * logs_list.len() as f64;
 }
@@ -207,6 +222,7 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Option<Address>> {
             servicelog_list: logs_list,
             holofuel_request: holofuel_address,
             invoice_value: outstanding_value as u64,
+            last_invoiced_log: 0,
     }.into());
     let address = hdk::commit_entry(&entry)?;
     Ok(Some(address))
