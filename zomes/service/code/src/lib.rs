@@ -72,13 +72,23 @@ define_zome! {
         }
         list_uninvoiced_servicelogs: {
             inputs: | |,
-            outputs: |result: Vec<Address>|,
+            outputs: |result: ZomeApiResult<Vec<Address>>|,
             handler: servicelog::handle_list_uninvoiced_servicelogs
         }
         generate_invoice: {
             inputs: | |,
-            outputs: |result: ZomeApiResult<Address>|,
+            outputs: |result: ZomeApiResult<Option<Address>>|,
             handler: invoice::handle_generate_invoice
+        }
+        list_unpaid_invoices: {
+            inputs: | |,
+            outputs: |result: ZomeApiResult<Vec<Address>>|,
+            handler: invoice::handle_list_unpaid_invoices
+        }
+        get_payment_status: {
+            inputs: | |,
+            outputs: |result: ZomeApiResult<invoice::PaymentStatus>|,
+            handler: invoice::handle_get_payment_status
         }
     ]
 
@@ -92,7 +102,9 @@ define_zome! {
             log_service,
             get_service,
             list_uninvoiced_servicelogs,
-            generate_invoice
+            generate_invoice,
+            list_unpaid_invoices,
+            get_payment_status
         ]
     }
 }

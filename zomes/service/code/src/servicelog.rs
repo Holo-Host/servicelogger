@@ -18,6 +18,7 @@ use hdk::{
 // use serde_json::{self, json};
 use super::request;
 use super::response;
+use super::invoice;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
@@ -60,9 +61,8 @@ fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), 
 pub fn handle_log_service(entry: ServiceLog) -> ZomeApiResult<Address> {
     let entry = Entry::App("service_log".into(), entry.into());
     let address = hdk::commit_entry(&entry)?;
-    Ok(address)
-    // TODO: Check payment prefs via bridge to Hosting app, and see if needed to generate an invoice automatically
 
+    return Ok(address);
 }
 
 pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {
@@ -76,14 +76,19 @@ fn _get_original_request(address: Address) -> ZomeApiResult<request::ClientReque
 }
 
 pub fn list_uninvoiced_servicelogs() -> Vec<Address> {
-    // TODO: filter out invoiced ones
-    match hdk::query("service_log".into(), 0, 0) {
+    match handle_list_uninvoiced_servicelogs() {
         Ok(results) => results,
         _ => vec![],
     }
 }
 
-pub fn handle_list_uninvoiced_servicelogs() -> Vec<Address> {
-    list_uninvoiced_servicelogs()
+pub fn handle_list_uninvoiced_servicelogs() -> ZomeApiResult<Vec<Address>> {
+    // List all InvoicedLogs, then join the list of all servicelog_list inside them
+    let last_log = match invoice::get_latest_invoice() {
+        Some(invoice) => invoice.last_invoiced_log,
+        None => 0
+    };
+
+    hdk::query("service_log".into(), last_log, 0)
 }
 

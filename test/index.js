@@ -130,6 +130,8 @@ scenario.runTape('can create a servicelog', async (t, { app }) => {
 
   const addr2 = app.call("service", "log_service", {"entry": service_log})
 
+  console.log("********************DEBUG:"+JSON.stringify(addr2))
+
   const result = app.call("service", "get_service", {"address": addr2.Ok})
 
   t.deepEqual(result, { Ok: { App: [ 'service_log', JSON.stringify(service_log) ] } })
@@ -160,7 +162,7 @@ scenario.runTape('log then list all servicelog', async (t, { app }) => {
   }
   const sl_addr2 = app.call("service", "log_service", {"entry": service_log2})
 
-  const results = app.call("service", "list_uninvoiced_servicelogs", {})
+  const results = app.call("service", "list_uninvoiced_servicelogs", {}).Ok
 
   t.deepEqual(results, [sl_addr1.Ok, sl_addr2.Ok])
 })
