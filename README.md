@@ -12,7 +12,7 @@ The service logger is an internal Holo component that measures and logs the host
 ## How to run test?
 
 ServiceLogger is best and most reliably built under a `nix-shell` environment.  Checkout the version
-of `holochain-rust` consistent with the version specified in `zomes/service/code/Cargo.toml',
+of `holochain-rust` consistent with the version specified in `zomes/service/code/Cargo.toml`,
 eg. `git checkout v0.0.18-alpha1`.  Then run `nix-shell`.  When you get a prompt, cd into your clone
 of `servicelogger`, and run the following commands:
 
