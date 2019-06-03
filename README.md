@@ -10,10 +10,16 @@ The service logger is an internal Holo component that measures and logs the host
 **Clients** that want to have some hosting done will log a Request. Then, when the **Hosts** finished doing a block of hosting, they will require a signature from the Clients, to generate the signed service log. After that the Service Logger will count the number of unpaid logs until its value hits a threshold configured in the Hosting App, to then trigger the generation of an Invoice, via bridge to Holofuel
 
 ## How to run test?
+
+ServiceLogger is best and most reliably built under a `nix-shell` environment.  Checkout the version
+of `holochain-rust` consistent with the version specified in `zomes/service/code/Cargo.toml',
+eg. `git checkout v0.0.18-alpha1`.  Then run `nix-shell`.  When you get a prompt, cd into your clone
+of `servicelogger`, and run the following commands:
+
 ```
 hc test 
 ```
-> Note since this repo is in dev mode, you would have to pull the [holochain-rust](https://github.com/holochain/holochain-rust) repo in the same folder you pull this repo into. This is required to run the hc test with the latest nodejs_conductor in the holochain-rust.
+> Note since this repo is in dev mode.  If you want to test using the holochain-rust `develop` branch, first edit `test/index.js` to use a "relative" version of nodejs_conductor;  you would have to pull the [holochain-rust](https://github.com/holochain/holochain-rust) repo in the same folder you pull this repo into. This is required to run the hc test with the latest nodejs_conductor in the holochain-rust.
 
 ## How to build DNA?
 After running the cmd bellow you will find the `.dna.json` in the `dna-src/dist` folder
