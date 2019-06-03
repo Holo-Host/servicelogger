@@ -1,5 +1,10 @@
 const path = require('path')
-const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
+
+// To use the nodejs_conductor specified in package.json:
+const { Config, Conductor, Scenario } = require('@holochain/holochain-nodejs');
+// To use a local copy of ../holochain-rust, (eg. on the `develop` branch), use:
+//const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
+
 Scenario.setTape(require('tape'))
 
 const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
