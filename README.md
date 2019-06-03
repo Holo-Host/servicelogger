@@ -21,6 +21,18 @@ hc test
 ```
 > Note since this repo is in dev mode.  If you want to test using the holochain-rust `develop` branch, first edit `test/index.js` to use a "relative" version of nodejs_conductor;  you would have to pull the [holochain-rust](https://github.com/holochain/holochain-rust) repo in the same folder you pull this repo into. This is required to run the hc test with the latest nodejs_conductor in the holochain-rust.
 
+### Bridging Tests
+
+Requires the HoloFuel, Holo-Hosting-App and servicelogger DNAs, built and/or copied to the local servicelogger `dist/` directory.
+
+- Build `holofuel` DNA and copy `holofuel/dist/holofuel.dna.json` to `dist/holofuel.dna.json`
+- Build `Holo-Hosting-App` and copy `../Holo-Hosting-App/dna-src/dist/Holo-Hosting-App.dna.json' to `dist/holohosting.dna.json`
+
+Run the Bridging tests with:
+```
+hc test -t test/bridging.js
+```
+
 ## How to build DNA?
 After running the cmd bellow you will find the `.dna.json` in the `dna-src/dist` folder
 
