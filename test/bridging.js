@@ -1,6 +1,11 @@
 const path = require('path')
 const sleep = require('sleep')
-const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
+
+// To use the nodejs_conductor specified in package.json:
+const { Config, Conductor, Scenario } = require('@holochain/holochain-nodejs');
+// To use a local copy of ../holochain-rust, (eg. on the `develop` branch), use:
+//const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
+
 Scenario.setTape(require('tape'))
 
 const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
@@ -25,7 +30,8 @@ const hostInstance = Config.instance(hostApp, hostDna)
 const hfBridge = Config.bridge('holofuel-bridge', appInstance, fuelInstance)
 const hhBridge = Config.bridge('hosting-bridge', appInstance, hostInstance)
 
-const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridges: [hfBridge, hhBridge], debugLog: true })
+const debugLog = false
+const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridges: [hfBridge, hhBridge], debugLog })
 
 const sample_request = {
   agent_id: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
@@ -242,6 +248,7 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
 
   app.call("service", "generate_invoice", {})
   payment_status = app.call("service", "get_payment_status", {}).Ok;
+  console.log("Unpaid invoice threshold exceeded: get_payment_status:" + JSON.stringify( payment_status ))
   t.deepEqual(payment_status.unpaid_value, 6.0);
   t.deepEqual(payment_status.situation, "Stopped");
 

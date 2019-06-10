@@ -12,7 +12,8 @@ const dna = Config.dna(dnaPath, 'servicelogger')
 const agentApp = Config.agent("app")
 const appInstance = Config.instance(agentApp, dna)
 
-const scenario = new Scenario([appInstance], { debugLog: true })
+const debugLog = false
+const scenario = new Scenario([appInstance], { debugLog })
 
 // Basic agentId check
 scenario.runTape('agentId', async (t, { app }) => {
