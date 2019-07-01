@@ -13,5 +13,4 @@ jobs:
   resource_class: medium
   steps:
    - checkout
-   - run: nix-shell
-   
+   - run: nix-shell --packages rustup
