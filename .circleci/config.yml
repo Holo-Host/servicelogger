@@ -7,7 +7,6 @@ jobs:
   branches:
     only:
       - master
-      - circleci
   docker:
    - image: holochain/holochain-rust:latest
   resource_class: medium
