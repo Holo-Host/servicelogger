@@ -10,6 +10,6 @@ jobs:
       - circleci
   docker:
    - image: holochain/holochain-rust:latest
-  resource_class: large
+  resource_class: medium
   steps:
    - checkout
