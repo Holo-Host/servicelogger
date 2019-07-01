@@ -9,9 +9,14 @@ jobs:
       - master
       - circleci
   docker:
-   - image: holochain/holochain-rust:latest
+    - image: holochain/holochain-rust:latest
   resource_class: medium
   steps:
-   - run: echo "starting CI for Holo ServiceLogger"
-   - checkout
-   - run: nix-shell --packages rustup --packages rustc --packages cargo
+    - checkout
+    - run:
+        name: Holo ServiceLogger
+        command: echo "starting CI for Holo ServiceLogger"
+    - run:
+        name: nix-shell
+        command: nix-shell --packages rustup --packages rustc --packages cargo
+        no_output_timeout: 45m
