@@ -18,5 +18,6 @@ jobs:
       - run:
           name: nix-shell
           command: |
-            nix-shell --packages rustup
+            nix-shell --packages rustup --packages rustc --packages cargo
+            ls -la
           no_output_timeout: 45m
