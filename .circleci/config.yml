@@ -18,5 +18,5 @@ jobs:
         command: echo "starting CI for Holo ServiceLogger"
     - run:
         name: nix-shell
-        command: nix-shell --packages rustup --packages rustc --packages cargo
+        command: nix-shell --packages rustup # --packages rustc --packages cargo
         no_output_timeout: 45m
