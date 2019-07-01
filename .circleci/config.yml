@@ -12,5 +12,6 @@ jobs:
    - image: holochain/holochain-rust:latest
   resource_class: medium
   steps:
+   - run: echo "starting CI for Holo ServiceLogger"
    - checkout
-   - run: nix-shell --packages rustup
+   - run: nix-shell --packages rustup --packages rustc --packages cargo
