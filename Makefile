@@ -27,15 +27,13 @@ build: version
 	#cargo build --release --manifest-path zomes/transactions/code/Cargo.toml --target wasm32-unknown-unknown || true
 
 test-cargo: version
-	RUST_BACKTRACE=1 cargo test --manifest-path zomes/transactions/code/Cargo.toml -- --nocapture || true
+	#RUST_BACKTRACE=1 cargo test --manifest-path zomes/transactions/code/Cargo.toml -- --nocapture || true
 
 install: build
-	rm -f dist/holofuel.dna.json
-	mkdir -p dist
-	hc package --output dist/holofuel.dna.json --strip-meta
+	nix-shell --run hf-install
 
 test: test-cargo # install
-	RUST_STACKTRACE=1 hc test # | test/node_modules/faucet/bin/cmd.js # for pretty output w/ no logging
+	#RUST_STACKTRACE=1 hc test # | test/node_modules/faucet/bin/cmd.js # for pretty output w/ no logging
 
 
 

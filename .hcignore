@@ -2,3 +2,4 @@ dist
 test
 README.md
 conductor-config.toml
+.cargo
