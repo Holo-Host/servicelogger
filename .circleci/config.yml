@@ -18,5 +18,5 @@ jobs:
       - run:
           name: nix-shell
           command: |
-            nix-shell --packages gnumake --packages rustup --packages rustc --packages cargo --run 'make install'
+            nix-shell --run 'make install'
           no_output_timeout: 45m
