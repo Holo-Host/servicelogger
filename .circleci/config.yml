@@ -18,5 +18,5 @@ jobs:
       - run:
           name: nix-shell
           command: |
-            nix-shell --run 'make install'
+            nix-shell --run 'make test-unit'
           no_output_timeout: 45m
