@@ -1,4 +1,8 @@
 dist
 test
 README.md
+Makefile
 conductor-config.toml
+conductor-tests.sh
+*.nix
+*~

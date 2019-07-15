@@ -8,7 +8,7 @@ jobs:
         - master
         - circleci
     docker:
-      - image: holochain/holochain-rust:circle.01.warm.nix
+      - image: holochain/holochain-rust:latest
     resource_class: medium
     steps:
       - checkout

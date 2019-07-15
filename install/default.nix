@@ -1,12 +1,11 @@
 { pkgs }:
 let
-  name = "hf-install";
+  name = "sl-install";
 
   script = pkgs.writeShellScriptBin name
   ''
-  rm -f dist/holofuel.dna.json
-  mkdir -p dist
-  hc package --output dist/holofuel.dna.json --strip-meta
+  rm -rf dist
+  hc package --strip-meta
   '';
 in
 {

@@ -1,11 +1,20 @@
 {
-  "steps": {
-    "cargo": [
-      "build",
-      "--release",
-      "--target=wasm32-unknown-unknown",
-      "--target-dir=target"
-    ]
-  },
-  "artifact": "target/wasm32-unknown-unknown/release/service.wasm"
+  "steps": [
+    {
+      "command": "cargo",
+      "arguments": [
+        "build",
+        "--release",
+        "--target=wasm32-unknown-unknown",
+        "--target-dir=/tmp/holofuel/target"
+      ]
+    },
+    {
+      "command": "wasm-gc",
+      "arguments": [
+        "/tmp/holofuel/target/wasm32-unknown-unknown/release/service.wasm"
+      ]
+    }
+  ],
+  "artifact": "/tmp/holofuel/target/wasm32-unknown-unknown/release/service.wasm"
 }
