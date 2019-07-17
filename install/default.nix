@@ -4,8 +4,7 @@ let
 
   script = pkgs.writeShellScriptBin name
   ''
-  rm -rf dist
-  hc package --strip-meta
+  make install
   '';
 in
 {

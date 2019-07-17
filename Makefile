@@ -14,23 +14,25 @@ sl-%:
 # - If you establish a Nix environment (eg. run `nix-shell` from within holochain-rust, to
 #   gain access to a certain development branch), then you can run these targets to build
 #   and test the 'Zome under that version of holochain-rust
-.PHONY: rebuild build test-unit test-e2e
-rebuild: clean build
-install: build
+.PHONY:		rebuild build test test-unit test-e2e
 
-build: dist/servicelogger.dna.json
+rebuild: 	clean build
+
+install: 	build
+
+build:		dist/servicelogger.dna.json
 
 dist/servicelogger.dna.json:
 	hc package --strip-meta
 
-test: test-unit test-e2e
+test: 		test-unit test-e2e
 
 test-unit:
 	RUST_BACKTRACE=1 cargo test \
 	    --manifest-path zomes/service/code/Cargo.toml \
 	    -- --nocapture
 
-test-e2e: dist/servicelogger.dna.json
+test-e2e:	dist/servicelogger.dna.json
 	( cd test && npm install ) \
 	&& RUST_BACKTRACE=1 hc test \
 
