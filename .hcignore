@@ -2,6 +2,7 @@ dist
 test
 README.md
 Makefile
+Cargo.toml
 conductor-config.toml
 conductor-tests.sh
 *.nix
