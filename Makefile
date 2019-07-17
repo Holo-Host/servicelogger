@@ -39,9 +39,7 @@ test-unit:
 test-e2e:	dist/servicelogger.dna.json
 	( cd test && npm install ) \
 	&& RUST_BACKTRACE=1 hc test \
-
-
-#	    | test/node_modules/faucet/bin/cmd.js
+	    | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
