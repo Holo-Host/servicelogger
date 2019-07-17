@@ -26,7 +26,7 @@ build:		$(DNA)
 
 # Build the DNA; Specifying a custom --output requires the path to exist
 $(DNA):
-	mkdir -p dist
+	mkdir -p $(dir $(@))
 	hc package --output $@ --strip-meta
 
 test: 		test-unit test-e2e
