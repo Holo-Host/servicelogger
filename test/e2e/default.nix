@@ -4,7 +4,7 @@ let
 
   script = pkgs.writeShellScriptBin name
   ''
-   sl-install && make test-e2e
+  make test-e2e
   '';
 in
 {

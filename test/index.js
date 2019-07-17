@@ -5,8 +5,8 @@ const { Diorama, tapeExecutor, backwardCompatibilityMiddleware } = require('@hol
 
 const test = require('tape')
 
-const dnaPath = "dist/servicelogger.dna.json"
-
+// const dnaPath = "dist/servicelogger.dna.json"
+const dnaPath =  path.join(__dirname, "../dist/servicelogger.dna.json")
 const debugLog = false
 
 const dna = Diorama.dna(dnaPath, 'servicelogger')

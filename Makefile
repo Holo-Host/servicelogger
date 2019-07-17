@@ -14,23 +14,34 @@ sl-%:
 # - If you establish a Nix environment (eg. run `nix-shell` from within holochain-rust, to
 #   gain access to a certain development branch), then you can run these targets to build
 #   and test the 'Zome under that version of holochain-rust
-.PHONY: rebuild build test-unit test-e2e
-rebuild: clean build
-install: build
-build:
-	rm -rf dist
-	hc package --strip-meta
+.PHONY:		rebuild build test test-unit test-e2e
 
-test: test-unit test-e2e
+rebuild: 	clean build
+
+install: 	build
+
+DNA = dist/servicelogger.dna.json
+
+build:		$(DNA)
+
+# Build the DNA; Specifying a custom --output requires the path to exist
+$(DNA):
+	mkdir -p dist
+	hc package --output $@ --strip-meta
+
+test: 		test-unit test-e2e
 
 test-unit:
 	RUST_BACKTRACE=1 cargo test \
 	    --manifest-path zomes/service/code/Cargo.toml \
 	    -- --nocapture
-test-e2e:
+
+test-e2e:	dist/servicelogger.dna.json
 	( cd test && npm install ) \
 	&& RUST_BACKTRACE=1 hc test \
-	    | test/node_modules/faucet/bin/cmd.js
+
+
+#	    | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
