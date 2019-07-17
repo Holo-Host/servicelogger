@@ -21,6 +21,8 @@ build:
 	rm -rf dist
 	hc package --strip-meta
 
+test: test-unit test-e2e
+
 test-unit:
 	RUST_BACKTRACE=1 cargo test \
 	    --manifest-path zomes/service/code/Cargo.toml \

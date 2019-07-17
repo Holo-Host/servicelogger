@@ -4,19 +4,11 @@ jobs:
   # build is required
   build:
     branches:
-      only:
-        - master
-        - circleci
+      ignore:
+        - gh-pages
     docker:
       - image: holochain/holochain-rust:latest
     resource_class: medium
     steps:
       - checkout
-      - run:
-          name: Holo ServiceLogger
-          command: echo "starting CI for Holo ServiceLogger"
-      - run:
-          name: nix-shell
-          command: |
-            nix-shell --run 'make test-unit'
-          no_output_timeout: 45m
+      - run: nix-shell --run sl-test
