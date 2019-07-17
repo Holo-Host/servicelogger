@@ -36,7 +36,7 @@ test-unit:
 	    --manifest-path zomes/service/code/Cargo.toml \
 	    -- --nocapture
 
-test-e2e:	dist/servicelogger.dna.json
+test-e2e:	$(DNA)
 	( cd test && npm install ) \
 	&& RUST_BACKTRACE=1 hc test \
 	    | test/node_modules/faucet/bin/cmd.js
