@@ -1,20 +1,31 @@
+# This is an example of what downstream consumers of holonix should do
+# This is also used to dogfood as many commands as possible for holonix
+# For example the release process for holonix uses this file
 let
- holonix-release-tag = "0.0.2";
- holonix-release-sha256 = "1njv2zr9f3kcz5v1p3ff6z4gp49k5l9knh2sss6f71sgmsr5q3zm";
 
- holonix = import (fetchTarball {
-  url = "https://github.com/holochain/holonix/tarball/${holonix-release-tag}";
-  sha256 = "${holonix-release-sha256}";
- });
- # uncomment to work locally
- # holonix = import ../holonix;
+ # point this to your local config.nix file for this project
+ # example.config.nix shows and documents a lot of the options
+ config = import ./config.nix;
+
+ # START HOLONIX IMPORT BOILERPLATE
+ holonix = import (
+  if ! config.holonix.use-github
+  then config.holonix.local.path
+  else fetchTarball {
+   url = "https://github.com/${config.holonix.github.owner}/${config.holonix.github.repo}/tarball/${config.holonix.github.ref}";
+   sha256 = config.holonix.github.sha256;
+  }
+ ) { config = config; };
+ # END HOLONIX IMPORT BOILERPLATE
+
 in
 with holonix.pkgs;
 {
- core-shell = stdenv.mkDerivation (holonix.shell // {
-  name = "holochain-serialization-shell";
+ dev-shell = stdenv.mkDerivation (holonix.shell // {
+  name = "dev-shell";
+  baseInputs = [ gnumake ];
 
-  buildInputs = []
+  buildInputs = [ ]
    ++ holonix.shell.buildInputs
 
    ++ (holonix.pkgs.callPackage ./install {
@@ -24,6 +35,6 @@ with holonix.pkgs;
    ++ (holonix.pkgs.callPackage ./test {
     pkgs = holonix.pkgs;
    }).buildInputs
-  ;
+   ;
  });
 }

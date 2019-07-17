@@ -1,17 +1,12 @@
-.PHONY: all sl-test sl-test-unit sl-test-e2e install clean
+.PHONY: all
 
 # External targets; Uses a nix-shell environment to obtain Holochain runtime, run tests
 
 all: sl-test
 
-sl-test:
-	nix-shell --run sl-test
-
-sl-test-%:
-	nix-shell --run sl-test-$*
-
-sl-install:
-	nix-shell --run sl-install
+# sl-install, sl-test, sl-test-unit, ...
+sl-%:
+	nix-shell --run sl-$*
 
 # Internal targets; require a Nix environment in order to be deterministic.  Uses the version
 # of `hc` on the system PATH.
@@ -21,6 +16,7 @@ sl-install:
 #   and test the 'Zome under that version of holochain-rust
 .PHONY: rebuild build test-unit test-e2e
 rebuild: clean build
+install: build
 build:
 	rm -rf dist
 	hc package --strip-meta
@@ -37,6 +33,11 @@ test-e2e:
 # Generic targets; does not require a Nix environment
 .PHONY: clean
 clean:
-	rm -rf dist test/node_modules .cargo # cleans up artifacts
+	rm -rf \
+	    dist \
+	    test/node_modules \
+	    .cargo \
+	    target \
+	    zomes/service/code/target
 
 
