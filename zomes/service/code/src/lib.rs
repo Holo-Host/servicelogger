@@ -1,18 +1,28 @@
-#![feature(try_from)]
 #[macro_use]
 extern crate hdk;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
+
+extern crate holochain_wasm_utils;
+extern crate holochain_persistence_api;
 #[macro_use]
-extern crate holochain_core_types_derive;
+extern crate holochain_json_derive;
 
 use hdk::{
     error::ZomeApiResult,
-};
-use hdk::holochain_core_types::{
-    cas::content::Address, entry::Entry, error::HolochainError, json::JsonString,
+    holochain_persistence_api::{
+        cas::content::{
+            Address,
+        },
+    },
+    holochain_json_api::{
+        json::JsonString, error::JsonError,
+    },
+    holochain_core_types::{
+        entry::Entry,
+    },
 };
 
 mod request;

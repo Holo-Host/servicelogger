@@ -3,13 +3,19 @@ use hdk::{
     self,
     entry_definition::ValidatingEntryType,
     error::{ZomeApiError, ZomeApiResult},
+    holochain_persistence_api::{
+        hash::HashString,
+        cas::content::{
+            Address,
+        },
+    },
+    holochain_json_api::{
+        json::JsonString, error::JsonError,
+    },
     holochain_core_types::{
         entry::Entry,
         error::HolochainError,
-        hash::HashString,
-        json::{DefaultJson, JsonString},
         dna::entry_types::Sharing,
-        cas::content::Address,
         validation::EntryAction,
         validation::EntryValidationData,
         time::Iso8601

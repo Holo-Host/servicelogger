@@ -5,3 +5,5 @@ target/
 Cargo.lock
 package-lock.json
 tmp-storage*
+.cargo
+*~

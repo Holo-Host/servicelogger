@@ -1,16 +1,14 @@
 version: 2
 
 jobs:
- # must be called build for local circle cli to work
- # is actually unit tests
- build:
-  branches:
-    only:
-      - master
-  docker:
-   - image: holochain/holochain-rust:latest
-  resource_class: medium
-  steps:
-   - run: echo "starting CI for Holo ServiceLogger"
-   - checkout
-   - run: nix-shell --packages rustup --packages rustc --packages cargo
+  # build is required
+  build:
+    branches:
+      ignore:
+        - gh-pages
+    docker:
+      - image: holochain/holochain-rust:latest
+    resource_class: medium
+    steps:
+      - checkout
+      - run: nix-shell --run sl-test
