@@ -20,10 +20,14 @@ rebuild: 	clean build
 
 install: 	build
 
-build:		dist/servicelogger.dna.json
+DNA = dist/servicelogger.dna.json
 
-dist/servicelogger.dna.json:
-	hc package --strip-meta
+build:		$(DNA)
+
+# Build the DNA; Specifying a custom --output requires the path to exist
+$(DNA):
+	mkdir -p dist
+	hc package --output $@ --strip-meta
 
 test: 		test-unit test-e2e
 
