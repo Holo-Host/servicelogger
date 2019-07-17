@@ -17,8 +17,10 @@ sl-%:
 .PHONY: rebuild build test-unit test-e2e
 rebuild: clean build
 install: build
-build:
-	rm -rf dist
+
+build: dist/servicelogger.dna.json
+
+dist/servicelogger.dna.json:
 	hc package --strip-meta
 
 test: test-unit test-e2e
@@ -27,7 +29,8 @@ test-unit:
 	RUST_BACKTRACE=1 cargo test \
 	    --manifest-path zomes/service/code/Cargo.toml \
 	    -- --nocapture
-test-e2e:
+
+test-e2e: dist/servicelogger.dna.json
 	( cd test && npm install ) \
 	&& RUST_BACKTRACE=1 hc test \
 
