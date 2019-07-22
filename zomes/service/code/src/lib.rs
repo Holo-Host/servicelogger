@@ -44,6 +44,10 @@ define_zome! {
 
     genesis: || { Ok(()) }
 
+    validate_agent: |validation_data : EntryValidationData::<AgentId>| {
+        Ok(())
+    }
+
     functions: [
         setup: {
             inputs: |entry: setup::SetupPrefs|,

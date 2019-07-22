@@ -28,6 +28,7 @@ build:		$(DNA)
 $(DNA):
 	mkdir -p $(dir $(@))
 	hc package --output $@ --strip-meta
+	ln $(DNA) dist/$$( hc hash | sed -ne 's/DNA Hash: \(.*\)/\1/p' ).dna.json
 
 test: 		test-unit test-e2e
 
