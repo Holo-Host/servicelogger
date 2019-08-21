@@ -7,3 +7,4 @@ conductor-config.toml
 conductor-tests.sh
 *.nix
 *~
+holochain-rust

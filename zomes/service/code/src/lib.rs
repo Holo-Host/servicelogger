@@ -42,7 +42,11 @@ define_zome! {
         invoice::invoiced_logs_definition()
     ]
 
-    genesis: || { Ok(()) }
+    init: || { Ok(()) }
+
+    validate_agent: |validation_data : EntryValidationData::<AgentId>| {
+        Ok(())
+    }
 
     functions: [
         setup: {

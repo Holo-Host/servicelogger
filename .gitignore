@@ -7,3 +7,4 @@ package-lock.json
 tmp-storage*
 .cargo
 *~
+holochain-rust
