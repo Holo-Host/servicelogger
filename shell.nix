@@ -1,1 +1,1 @@
-(import ./. {}).example.override { shell = true; }
+(import ./. {}).servicelogger.override { shell = true; }

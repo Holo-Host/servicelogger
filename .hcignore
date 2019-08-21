@@ -1,10 +1,10 @@
-dist
-test
-README.md
-Makefile
+*~
+*.nix
 Cargo.toml
 conductor-config.toml
 conductor-tests.sh
-*.nix
-*~
+dist
 holochain-rust
+Makefile
+README.md
+test
