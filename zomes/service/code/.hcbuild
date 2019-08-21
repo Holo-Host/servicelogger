@@ -4,17 +4,10 @@
       "command": "cargo",
       "arguments": [
         "build",
-        "--release",
-        "--target=wasm32-unknown-unknown",
-        "--target-dir=/tmp/holofuel/target"
-      ]
-    },
-    {
-      "command": "wasm-gc",
-      "arguments": [
-        "/tmp/holofuel/target/wasm32-unknown-unknown/release/service.wasm"
+	"--release",
+        "--target=wasm32-unknown-unknown"
       ]
     }
   ],
-  "artifact": "/tmp/holofuel/target/wasm32-unknown-unknown/release/service.wasm"
+  "artifact": "target/wasm32-unknown-unknown/release/service.wasm"
 }
