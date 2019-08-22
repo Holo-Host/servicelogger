@@ -11,4 +11,4 @@ jobs:
     resource_class: medium
     steps:
       - checkout
-      - run: nix-shell --run sl-test
+      - run: nix-shell --command "make test"
