@@ -7,8 +7,7 @@ jobs:
       ignore:
         - gh-pages
     docker:
-      - image: holochain/holochain-rust:latest
-    resource_class: medium
+      - image: holochain/holonix:latest
     steps:
       - checkout
-      - run: nix-shell --command "make test"
+      - run: nix-shell --run 'make test'
