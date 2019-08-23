@@ -2,7 +2,6 @@
 dist/
 holochain-rust
 node_modules/
-package-lock.json
 result*
 target/
 *~
