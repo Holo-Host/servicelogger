@@ -11,6 +11,8 @@ jobs:
     steps:
       - checkout
       - run: |
+          nix-env -f pkgs.nix -iA git
+      - run: |
           nix-shell \
             --option substituters 'https://cache.holo.host https://cache.nixos.org' \
             --option trusted-public-keys \
