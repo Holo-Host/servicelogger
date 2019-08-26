@@ -42,7 +42,9 @@ test-unit:
 test-e2e:	$(DNA)
 	( cd test && npm install ) \
 	&& RUST_BACKTRACE=1 hc test \
-	    | test/node_modules/faucet/bin/cmd.js
+
+
+#	    | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
