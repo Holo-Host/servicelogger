@@ -8,6 +8,8 @@ jobs:
         - gh-pages
     docker:
       - image: nixos/nix
+    # Required because hc package default DNA name is working directory name
+    working_directory: ~/servicelogger
     steps:
       - checkout
       - run: |
