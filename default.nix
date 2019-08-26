@@ -1,8 +1,8 @@
 { pkgs ? import ./pkgs.nix {} }: with pkgs;
 
 {
-  example = buildZome {
-    name = "example";
+  servicelogger = buildDNA {
+    name = "servicelogger";
     src = gitignoreSource ./.;
   };
 }

@@ -1,10 +1,7 @@
-dist/
-node_modules/
-target/
-.hc
-Cargo.lock
-package-lock.json
-tmp-storage*
 .cargo
-*~
+dist/
 holochain-rust
+node_modules/
+result*
+target/
+*~

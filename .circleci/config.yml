@@ -7,8 +7,17 @@ jobs:
       ignore:
         - gh-pages
     docker:
-      - image: holochain/holochain-rust:latest
-    resource_class: medium
+      - image: nixos/nix
+    # Required because hc package default DNA name is working directory name
+    working_directory: ~/servicelogger
     steps:
       - checkout
-      - run: nix-shell --run sl-test
+      - run: |
+          nix-env -f pkgs.nix -iA git
+      - run: |
+          nix-shell \
+            --option substituters 'https://cache.holo.host https://cache.nixos.org' \
+            --option trusted-public-keys \
+              'cache.holo.host-1:lNXIXtJgS9Iuw4Cu6X0HINLu9sTfcjEntnrgwMQIMcE=
+               cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY=' \
+            --run 'make test'

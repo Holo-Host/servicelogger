@@ -2,11 +2,12 @@
 
 # External targets; Uses a nix-shell environment to obtain Holochain runtime, run tests
 
-all: sl-test
+.PHONY: all
+all: nix-test
 
-# sl-install, sl-test, sl-test-unit, ...
-sl-%:
-	nix-shell --run sl-$*
+# nix-install, nix-test, nix-test-unit, ...
+nix-%:
+	nix-shell --pure --run "make $*"
 
 # Internal targets; require a Nix environment in order to be deterministic.  Uses the version
 # of `hc` on the system PATH.
@@ -25,10 +26,11 @@ DNA = dist/servicelogger.dna.json
 build:		$(DNA)
 
 # Build the DNA; Specifying a custom --output requires the path to exist
+# However, if the name of the directory within which `hc` is run matches the
+# DNA's name, then this name is used by default, and the output directory is
+# created automatically.
 $(DNA):
-	mkdir -p $(dir $(@))
-	hc package --output $@ --strip-meta
-	ln $(DNA) dist/$$( hc hash | sed -ne 's/DNA Hash: \(.*\)/\1/p' ).servicelogger.dna.json
+	hc package --strip-meta
 
 test: 		test-unit test-e2e
 
