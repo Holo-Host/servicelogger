@@ -1,6 +1,6 @@
 [package]
 name = "service"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["Julio Monteiro <julio.monteiro@holo.host>"]
 edition = "2018"
 
@@ -10,9 +10,9 @@ serde_json = { version = "=1.0.39", features = ["preserve_order"] }
 serde_derive = "=1.0.89"
 syn = "=0.15.31"
 # nix-shell installs a symbolic link to the correct defined installation of holochain-rust
-hdk = { path = "../../../holochain-rust/hdk-rust" }
-holochain_wasm_utils = { path = "../../../holochain-rust/wasm_utils" }
-holochain_persistence_api = "=0.0.7"
+hdk = { path = "../../../holochain-rust/crates/hdk" }
+holochain_wasm_utils = { path = "../../../holochain-rust/crates/wasm_utils" }
+holochain_persistence_api = "=0.0.10"
 holochain_json_derive = "=0.0.17"
 
 [lib]

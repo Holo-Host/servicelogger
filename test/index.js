@@ -1,206 +1,148 @@
-const path = require('path')
-
-
-const { Diorama, tapeExecutor, backwardCompatibilityMiddleware } = require('@holochain/diorama')
-
-const test = require('tape')
-
-// const dnaPath = "dist/servicelogger.dna.json"
-const dnaPath =  path.join(__dirname, "../dist/servicelogger.dna.json")
-const debugLog = false
-
-const dna = Diorama.dna(dnaPath, 'servicelogger')
-
-const dioramaSimple = new Diorama({
-  instances: {
-    app: dna,
-  },
-  bridges: [
-  ],
-  debugLog,
-  executor: tapeExecutor(test),
-  middleware: backwardCompatibilityMiddleware,
-})
-
-const scenario = dioramaSimple.registerScenario
+//"use strict"; // locks up tests for some reason
+// This test file uses the tape testing framework.
+// To learn more, go here: https://github.com/substack/tape
 
 /*
- * Old holochain-nodejs initialization
- * 
-// To use the nodejs_conductor specified in package.json:
-const { Config, Conductor, Scenario } = require('@holochain/holochain-nodejs');
-// To use a local copy of ../holochain-rust, (eg. on the `develop` branch), use:
-//const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
-
-Scenario.setTape(require('tape'))
-
-const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
-const dna = Config.dna(dnaPath, 'servicelogger')
-const agentApp = Config.agent("app")
-const appInstance = Config.instance(agentApp, dna)
-
-const debugLog = false
-const scenario = new Scenario([appInstance], { debugLog })
- *
+ * Try-o-rama
  */
+const { Orchestrator, tapeExecutor, singleConductor, combine, callSync } = require('@holochain/try-o-rama')
 
-// Basic agentId check
-scenario('agentId', async (s, t, { app }) => {
-  t.ok(app.agentId)
-})
+const MIN_EXPECTED_SCENARIOS = 1
 
-const setup_prefs = {
-  dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
+process.on('unhandledRejection', error => {
+  // Will print "unhandledRejection err is not defined"
+  console.error('got unhandledRejection:', error);
+});
+
+const dumbWaiter = interval => (run, f) => run(s =>
+  f(Object.assign({}, s, {
+    consistency: () => new Promise(resolve => {
+      console.log(`dumbWaiter is waiting ${interval}ms...`)
+      setTimeout(resolve, interval)
+    })
+  }))
+                                              )
+
+
+let transport_config = 'memory';
+let middleware = combine(
+  // by default, combine conductors into a single conductor for in-memory networking
+  // NB: this middleware makes a really huge difference! and it's not very well tested,
+  // as of Oct 1 2019. So, keep an eye out.
+  singleConductor,
+  callSync,
+  tapeExecutor(require('tape')),
+);
+
+const APP_SPEC_NETWORK_TYPE = process.env.APP_SPEC_NETWORK_TYPE || "sim1h"
+
+if (APP_SPEC_NETWORK_TYPE === "websocket")
+{
+  transport_config = "websocket"
+
+  // omit singleConductor
+  middleware = combine(
+    callSync,
+    tapeExecutor(require('tape')),
+  );
+}
+else if (APP_SPEC_NETWORK_TYPE === "sim1h") // default
+{
+    transport_config = {
+	type: 'sim1h',
+	dynamo_url: "http://localhost:8000",
+    }
+
+    // omit singleConductor
+    middleware = combine(
+	// dumbWaiter(1000),
+	callSync,
+	tapeExecutor(require('tape')),
+    );
+}
+else if (APP_SPEC_NETWORK_TYPE === "sim2h")
+{
+    transport_config = {
+        type: 'sim2h',
+        sim2h_url: "wss://localhost:9002",
+    }
+
+    // omit singleConductor
+    middleware = combine(
+        // dumbWaiter(1000),
+        callSync,
+        tapeExecutor(require('tape')),
+    );
 }
 
-const sample_request = {
-  agent_id: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
-  zome_call_spec: "blog/create_post",
-  dna_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk",
-}
-
-const sample_response1 = {
-  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
-  hosting_stats: {
-    cpu_seconds: 3.2,
-    bytes_in: 12309,
-    bytes_out: 7352,
-  },
-  response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
-}
-
-const sample_response2 = {
-  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
-  hosting_stats: {
-    cpu_seconds: 3.3,
-    bytes_in: 4332,
-    bytes_out: 7352,
-  },
-  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+// override the transport_config if we are in the Final Exam context!
+if (process.env.HC_TRANSPORT_CONFIG) {
+    transport_config=require(process.env.HC_TRANSPORT_CONFIG)
 }
 
 
-// 1. The client starts a new request for hosting, based on a call from the HC Interceptor
-scenario('can log a client request', async (s, t, { app }) => {
-
-  await app.call("service", "setup", {"entry": setup_prefs})
-
-  const addr = await app.call("service", "log_request", {"entry" : sample_request})
-
-  t.deepEqual(addr.Ok, "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4")
-
-  const result = await app.call("service", "get_request", {"address": addr.Ok})
-
-  t.deepEqual(result, { Ok: { App: [ 'client_request', JSON.stringify(sample_request) ] } })
-})
-
-// 2. The Conductor wants to record a HostResponse, indicating some hosting was done
-scenario('can log a host response', async (s, t, { app }) => {
-  // performs initial setup
-  await app.call("service", "setup", {"entry": setup_prefs})
-
-  const request_addr = await app.call("service", "log_request", {"entry" : sample_request})
-
-  // try to log a response with a bad request_hash
-  const bad_response = {
-    request_hash: "xxxxxxx-fake-address-xxxxxxx",
-    hosting_stats: {
-      cpu_seconds: 3.2,
-      bytes_in: 12309,
-      bytes_out: 7352,
+const orchestrator = new Orchestrator({
+    middleware,
+    waiter: {
+	softTimeout: 5000,
+	hardTimeout: 10000,
     },
-    response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-    response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-    host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
-  }
-  const failure = await app.call("service", "log_response", {"entry" : bad_response})
-  t.ok(failure.Err.Internal.includes("ClientRequest entry not found!"), "should generate an error")
-
-  // Log a valid response
-  const response = {
-    request_hash: request_addr.Ok,
-    hosting_stats: {
-      cpu_seconds: 3.2,
-      bytes_in: 12309,
-      bytes_out: 7352,
-    },
-    response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-    response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-    host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
-  }
-  const addr = await app.call("service", "log_response", {"entry" : response})
-
-  const result = await app.call("service", "get_response", {"address": addr.Ok})
-
-  t.deepEqual(result, { Ok: { App: [ 'host_response', JSON.stringify(response) ] } })
+    globalConfig: {
+	logger: {
+            type: "debug",
+            rules: {
+		rules: [
+                    {
+			exclude: true,
+			pattern: ".*parity.*"
+                    },
+                    {
+			exclude: true,
+			pattern: ".*mio.*"
+                    },
+                    {
+			exclude: true,
+			pattern: ".*tokio.*"
+                    },
+                    {
+			exclude: true,
+			pattern: ".*hyper.*"
+                    },
+                    {
+			exclude: true,
+			pattern: ".*rusoto_core.*"
+                    },
+                    {
+			exclude: true,
+			pattern: ".*want.*"
+                    },
+                    {
+			exclude: true,
+			pattern: ".*rpc.*"
+                    }
+		]
+            },
+            state_dump: true,
+	},
+	network: transport_config
+    }
 })
 
-// 3. With the client signature on that HostResponse, the Conductor creates a ServiceLog, that is a billable log
-scenario('can create a servicelog', async (s, t, { app }) => {
-  // performs initial setup
-  await app.call("service", "setup", {"entry": setup_prefs})  
+// Run the various scenerio test packages
 
-  // Logs a sample request
-  await app.call("service", "log_request", {"entry" : sample_request})
+require('./basic')(orchestrator.registerScenario)
 
-  const addr = await app.call("service", "log_response", {"entry" : sample_response1})
 
-  // try to log a bad service_log 
-  const bad_service_log = {
-    response_hash: "xxx-fakeaddr-xxx",
-    client_signature: "noxsig"
-  }
-  const failure = await app.call("service", "log_service", {"entry": bad_service_log})
-  t.ok(failure.Err.Internal.includes("HostResponse entry not found!"), "should generate an error")
+// Check to see that we haven't accidentally disabled a bunch of scenarios
+const num = orchestrator.numRegistered()
+if (num < MIN_EXPECTED_SCENARIOS) {
+    console.error(`Expected at least ${MIN_EXPECTED_SCENARIOS} scenarios, but only ${num} were registered!`)
+    process.exit(1)
+}
+else {
+    console.log(`Registered ${num} scenarios (at least ${MIN_EXPECTED_SCENARIOS} were expected)`)
+}
 
-  // then log an actual service_log
-  const service_log = {
-    response_hash: addr.Ok,
-    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
-  }
-
-  const addr2 = await app.call("service", "log_service", {"entry": service_log})
-
-  console.log("********************DEBUG:"+JSON.stringify(addr2))
-
-  const result = await app.call("service", "get_service", {"address": addr2.Ok})
-
-  t.deepEqual(result, { Ok: { App: [ 'service_log', JSON.stringify(service_log) ] } })
+orchestrator.run().then(stats => {
+    console.log("All done.")
 })
-
-// 4. List all billable ServiceLogs. TODO: filter by start and end time (for pagination)
-scenario('log then list all servicelog', async (s, t, { app }) => {
-
-  // performs initial setup
-  await app.call("service", "setup", {"entry": setup_prefs})  
-
-  // Logs a sample request
-  await app.call("service", "log_request", {"entry" : sample_request})
-
-  // Log a first response & service_log
-  const addr1 = await app.call("service", "log_response", {"entry" : sample_response1})
-  const service_log1 = {
-    response_hash: addr1.Ok,
-    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
-  }
-  const sl_addr1 = await app.call("service", "log_service", {"entry": service_log1})
-
-  // Log a second response & service_log
-  const addr2 = await app.call("service", "log_response", {"entry" : sample_response1})
-  const service_log2 = {
-    response_hash: addr2.Ok,
-    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
-  }
-  const sl_addr2 = await app.call("service", "log_service", {"entry": service_log2})
-
-  const results = await app.call("service", "list_uninvoiced_servicelogs", {})
-
-  t.deepEqual(results.Ok, [sl_addr1.Ok, sl_addr2.Ok])
-})
-
-
-dioramaSimple.run()

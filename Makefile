@@ -30,7 +30,7 @@ build:		$(DNA)
 # DNA's name, then this name is used by default, and the output directory is
 # created automatically.
 $(DNA):
-	hc package --strip-meta
+	hc package
 
 test: 		test-unit test-e2e
 
@@ -39,10 +39,18 @@ test-unit:
 	    --manifest-path zomes/service/code/Cargo.toml \
 	    -- --nocapture
 
+test-e2e: export AWS_ACCESS_KEY_ID     ?= HoloCentral
+test-e2e: export AWS_SECRET_ACCESS_KEY ?= ... 
 test-e2e:	$(DNA)
-	( cd test && npm install ) \
-	&& RUST_BACKTRACE=1 hc test \
-	    | test/node_modules/faucet/bin/cmd.js
+	export |grep AWS
+	@echo "Setting up Scenario test Javascript..."; \
+	    ( cd test && npm install );
+	@echo "Starting dynamodb-memory..."; \
+	    dynamodb-memory &
+	@echo "Starting HoloFuel Scenario tests..."; \
+	    RUST_BACKTRACE=1 hc test \
+
+#	    | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
