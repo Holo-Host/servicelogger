@@ -49,8 +49,7 @@ test-e2e:	$(DNA)
 	    dynamodb-memory &
 	@echo "Starting HoloFuel Scenario tests..."; \
 	    RUST_BACKTRACE=1 hc test \
-
-#	    | test/node_modules/faucet/bin/cmd.js
+	    | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
