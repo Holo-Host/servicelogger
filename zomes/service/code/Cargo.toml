@@ -12,7 +12,7 @@ syn = "=0.15.31"
 # nix-shell installs a symbolic link to the correct defined installation of holochain-rust
 hdk = { path = "../../../holochain-rust/crates/hdk" }
 holochain_wasm_utils = { path = "../../../holochain-rust/crates/wasm_utils" }
-holochain_persistence_api = "=0.0.10"
+holochain_persistence_api = "=0.0.11"
 holochain_json_derive = "=0.0.17"
 
 [lib]

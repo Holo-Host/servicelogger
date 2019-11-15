@@ -39,17 +39,27 @@ test-unit:
 	    --manifest-path zomes/service/code/Cargo.toml \
 	    -- --nocapture
 
-test-e2e: export AWS_ACCESS_KEY_ID     ?= HoloCentral
-test-e2e: export AWS_SECRET_ACCESS_KEY ?= ... 
-test-e2e:	$(DNA)
+test-e2e-sim1h: export AWS_ACCESS_KEY_ID     ?= HoloCentral
+test-e2e-sim1h: export AWS_SECRET_ACCESS_KEY ?= ... 
+test-e2e-sim1h:	$(DNA)
 	export |grep AWS
 	@echo "Setting up Scenario test Javascript..."; \
 	    ( cd test && npm install );
 	@echo "Starting dynamodb-memory..."; \
 	    dynamodb-memory &
 	@echo "Starting HoloFuel Scenario tests..."; \
-	    RUST_BACKTRACE=1 hc test \
+	    RUST_BACKTRACE=1 APP_SPEC_NETWORK_TYPE=sim1h hc test \
 	    | test/node_modules/faucet/bin/cmd.js
+
+test-e2e:	$(DNA)
+	@echo "Setting up Scenario test Javascript..."; \
+	    ( cd test && npm install );
+	@echo "Starting sim2h_server on localhost:9000..."; \
+	    sim2h_server -p 9000 &
+	@echo "Starting HoloFuel Scenario tests..."; \
+	    RUST_BACKTRACE=1 APP_SPEC_NETWORK_TYPE=sim2h hc test \
+
+#	    | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
