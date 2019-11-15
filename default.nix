@@ -12,7 +12,6 @@ in
     src = gitignoreSource ./.;
 
     nativeBuildInputs = []
-    ++ (callPackage ./dynamodb {}).buildInputs
     ++ lib.optionals stdenv.isDarwin [ CoreServices ];
   };
 }
