@@ -34,7 +34,11 @@ let middleware = combine(
   tapeExecutor(require('tape')),
 );
 
-const APP_SPEC_NETWORK_TYPE = process.env.APP_SPEC_NETWORK_TYPE || "sim1h"
+
+/*
+ * End-to-end testing; default assumes sim2h_server on localhost:9000
+ */
+const APP_SPEC_NETWORK_TYPE = process.env.APP_SPEC_NETWORK_TYPE || "sim2h"
 
 if (APP_SPEC_NETWORK_TYPE === "websocket")
 {

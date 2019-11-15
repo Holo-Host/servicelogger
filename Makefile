@@ -51,15 +51,17 @@ test-e2e-sim1h:	$(DNA)
 	    RUST_BACKTRACE=1 APP_SPEC_NETWORK_TYPE=sim1h hc test \
 	    | test/node_modules/faucet/bin/cmd.js
 
+# End-to-end test of DNA.  Runs a sim2h_server on localhost:9000; the default expected by `hc test`
 test-e2e:	$(DNA)
 	@echo "Setting up Scenario test Javascript..."; \
-	    ( cd test && npm install );
-	@echo "Starting sim2h_server on localhost:9000..."; \
+	    ( cd test && npm install )
+	@echo "Starting sim2h_server on localhost:9000 (may already be running)..."; \
 	    sim2h_server -p 9000 &
 	@echo "Starting HoloFuel Scenario tests..."; \
-	    RUST_BACKTRACE=1 APP_SPEC_NETWORK_TYPE=sim2h hc test \
+	    RUST_BACKTRACE=1 hc test 2>test.out~ \
+	        | test/node_modules/faucet/bin/cmd.js
+	@echo "*** If tests failed, see debug output in test.out~ ***"
 
-#	    | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
