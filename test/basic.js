@@ -1,4 +1,5 @@
 const { one } = require('./config')
+const util = require('./util')
 
 module.exports = scenario => {
 
@@ -14,34 +15,45 @@ const setup_prefs = {
   dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
 }
 
-const sample_request = {
-  agent_id: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
-  zome_call_spec: "blog/create_post",
-  dna_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk",
+const sample_request1 = {
+  agent_id: "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
+  instance_id: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
+  call_spec: "blog/create_post",
+  request_digest: "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+  agent_signature: "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
 }
 
+const sample_request2 = {
+  agent_id: "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
+  instance_id: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
+  call_spec: "blog/create_post",
+  request_digest: "QmNQa1FSTXNHmrjjfgUW3Px3Vkke4oKiFWdigWkYSux2Pi",
+  agent_signature: "sMZaWZu090wdnOcCxAeGG8SeTDyi+T7SWd+9WovxFcvTmvg3jRrX/6oPMm+40VMIBced9LpqR4Oo22qBH30RCw=="
+}
+
+
 const sample_response1 = {
-  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
+  request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
   hosting_stats: {
     cpu_seconds: 3.2,
     bytes_in: 12309,
     bytes_out: 7352,
   },
-  response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+  response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
   response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+  host_signature: "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
 }
 
 const sample_response2 = {
-  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
+  request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
   hosting_stats: {
     cpu_seconds: 3.3,
     bytes_in: 4332,
     bytes_out: 7352,
   },
-  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+  response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:59 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 5678',
+  host_signature: "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
 }
 
 
@@ -52,13 +64,26 @@ scenario('can log a client request', async (s, t) => {
     var setup = await app.call('app', "service", "setup", {"entry": setup_prefs})
     console.log("***DEBUG***: setup == " + JSON.stringify( setup ));
 
-    const addr = await app.call('app', "service", "log_request", {"entry" : sample_request})
+    const addr = await app.call('app', "service", "log_request", {entry: sample_request1})
 
-    t.deepEqual(addr.Ok, "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4")
+    t.deepEqual(addr, { Ok: 'QmesF7KfL155meRTGzZQnqdUnYSYA4Kjrn2iL7tkCWxDCi' })
 
     const result = await app.call('app', "service", "get_request", {"address": addr.Ok})
 
-    t.deepEqual(result, { Ok: { App: [ 'client_request', JSON.stringify(sample_request) ] } })
+    t.deepEqual(result, { Ok: { App: [ 'client_request', JSON.stringify(sample_request1) ] } })
+
+    // Ensure that signature validation occurs
+    const sig_fail = await app.call('app', "service", "log_request", {
+	entry: {
+	    ...sample_request1,
+	    agent_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+	}
+    })
+    console.log("***DEBUG***: sig_fail == " + JSON.stringify( sig_fail ))
+    let sig_fail_err = util.get( ['Err', 'Internal'], sig_fail )
+    console.log("***DEBUG***: sig_fail_err == " + JSON.stringify( sig_fail_err ))
+    t.ok(sig_fail_err && sig_fail_err.includes("Signature invalid for ClientRequest"),
+	 "should generate an Signature invlid: " + JSON.stringify( sig_fail ))
 })
 
 
@@ -69,40 +94,51 @@ scenario('can log a host response', async (s, t) => {
     // performs initial setup
     await app.call('app', "service", "setup", {"entry": setup_prefs})
 
-    const request_addr = await app.call('app', "service", "log_request", {"entry" : sample_request})
+    const request_addr = await app.call('app', "service", "log_request", {"entry" : sample_request1})
 
-    // try to log a response with a bad request_hash
+    // try to log a response with a bad request_commit
     const bad_response = {
-	request_hash: "xxxxxxx-fake-address-xxxxxxx",
+	request_commit: "xxxxxxx-fake-address-xxxxxxx",
 	hosting_stats: {
 	    cpu_seconds: 3.2,
 	    bytes_in: 12309,
 	    bytes_out: 7352,
 	},
-	response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+	response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
 	response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-	host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+	host_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
-    const failure = await app.call('app', "service", "log_response", {"entry" : bad_response})
-    t.ok(failure.Err.Internal.includes("ClientRequest entry not found!"), "should generate an error")
+    const rsp_fail = await app.call('app', "service", "log_response", {"entry" : bad_response})
+    console.log("***DEBUG***: rsp_fail == " + JSON.stringify( rsp_fail ));
+    let rsp_fail_err = util.get( ['Err', 'Internal'], rsp_fail )
+    console.log("***DEBUG***: rsp_fail_err == " + JSON.stringify( rsp_fail_err ));
+    t.ok(rsp_fail_err && rsp_fail_err.includes("ClientRequest entry not found!"),
+	 "should generate a not found:" + JSON.stringify( rsp_fail ))
 
     // Log a valid response
     const response = {
-	request_hash: request_addr.Ok,
+	request_commit: request_addr.Ok,
 	hosting_stats: {
 	    cpu_seconds: 3.2,
 	    bytes_in: 12309,
 	    bytes_out: 7352,
 	},
-	response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+	response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
 	response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-	host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
+	host_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
     const addr = await app.call('app', "service", "log_response", {"entry" : response})
 
     const result = await app.call('app', "service", "get_response", {"address": addr.Ok})
 
-    t.deepEqual(result, { Ok: { App: [ 'host_response', JSON.stringify(response) ] } })
+    let host_response_entry = util.get( ['Ok', 'App'], result );
+    t.ok( host_response_entry )
+    if ( host_response_entry ) {
+	// The tuple 'type,"Entry JSON"' is returned
+	let host_response = JSON.parse( host_response_entry[1] )
+	console.log("***DEBUG***: host_response == " + JSON.stringify( host_response ))
+	t.deepEqual(host_response, response)
+    }
 })
 
 // 3. With the client signature on that HostResponse, the Conductor creates a ServiceLog, that is a billable log
@@ -113,29 +149,36 @@ scenario('can create a servicelog', async (s, t) => {
     await app.call('app', "service", "setup", {"entry": setup_prefs})  
 
     // Logs a sample request
-    await app.call('app', "service", "log_request", {"entry" : sample_request})
+    const req = await app.call('app', "service", "log_request", {"entry" : sample_request1})
 
-    const addr = await app.call('app', "service", "log_response", {"entry" : sample_response1})
+    const addr = await app.call('app', "service", "log_response", {
+	entry: {
+	    ...sample_response1,
+	    request_commit: req.Ok
+	}
+    })
+    console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
+    t.deepEqual( addr, { Ok: 'QmW6gVatshaxsuZ3sjKr444HFVwC7NiEJ69cwLyvqG5M2E' })
 
     // try to log a bad service_log 
     const bad_service_log = {
-	response_hash: "xxx-fakeaddr-xxx",
-	client_signature: "noxsig"
+	response_commit: "xxx-fakeaddr-xxx",
+	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
     const failure = await app.call('app', "service", "log_service", {"entry": bad_service_log})
     t.ok(failure.Err.Internal.includes("HostResponse entry not found!"), "should generate an error")
 
     // then log an actual service_log
     const service_log = {
-	response_hash: addr.Ok,
-	client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
+	response_commit: addr.Ok,
+	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
 
     const addr2 = await app.call('app', "service", "log_service", {"entry": service_log})
-
-    console.log("********************DEBUG:"+JSON.stringify(addr2))
+    console.log("***DEBUG***: log_service: "+JSON.stringify( addr2 ))
 
     const result = await app.call('app', "service", "get_service", {"address": addr2.Ok})
+    console.log("***DEBUG***: get_service: " + JSON.stringify( result ))
 
     t.deepEqual(result, { Ok: { App: [ 'service_log', JSON.stringify(service_log) ] } })
 })
@@ -148,27 +191,48 @@ scenario('log then list all servicelog', async (s, t) => {
     await app.call('app', "service", "setup", {"entry": setup_prefs})  
 
     // Logs a sample request
-    await app.call('app', "service", "log_request", {"entry" : sample_request})
+    const req1 = await app.call('app', "service", "log_request", {entry: sample_request1})
+    console.log("***DEBUG***: log_request 1: "+JSON.stringify( req1 ))
 
     // Log a first response & service_log
-    const addr1 = await app.call('app', "service", "log_response", {"entry" : sample_response1})
+    const addr1 = await app.call('app', "service", "log_response", {
+	entry: {
+	    ...sample_response1,
+	    request_commit: req1.Ok
+	}
+    })
+    console.log("***DEBUG***: log_response 1: "+JSON.stringify( addr1 ))
+
     const service_log1 = {
-	response_hash: addr1.Ok,
-	client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
+	response_commit: addr1.Ok,
+	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
-    const sl_addr1 = await app.call('app', "service", "log_service", {"entry": service_log1})
+    const sl_addr1 = await app.call('app', "service", "log_service", {
+	entry: service_log1
+    })
+    console.log("***DEBUG***: log_service 1: "+JSON.stringify( sl_addr1 ))
 
     // Log a second response & service_log
-    const addr2 = await app.call('app', "service", "log_response", {"entry" : sample_response1})
+    const req2 = await app.call('app', "service", "log_request", {entry: sample_request2})
+    const addr2 = await app.call('app', "service", "log_response", {
+	entry: {
+	    ...sample_response2,
+	    request_commit: req2.Ok
+	}
+    })
+    console.log("***DEBUG***: log_response 2: "+JSON.stringify( addr2 ))
     const service_log2 = {
-	response_hash: addr2.Ok,
-	client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
+	response_commit: addr2.Ok,
+	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
-    const sl_addr2 = await app.call('app', "service", "log_service", {"entry": service_log2})
+    const sl_addr2 = await app.call('app', "service", "log_service", {
+	entry: service_log2
+    })
+    console.log("***DEBUG***: log_service 2: "+JSON.stringify( sl_addr2 ))
 
     const results = await app.call('app', "service", "list_uninvoiced_servicelogs", {})
 
-    t.deepEqual(results.Ok, [sl_addr1.Ok, sl_addr2.Ok])
+    t.deepEqual(results.Ok.sort(), [sl_addr1.Ok, sl_addr2.Ok].sort())
 })
 
 }

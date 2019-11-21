@@ -1,10 +1,9 @@
-#[allow(unused_imports)]
+
 use hdk::{
     self,
     entry_definition::ValidatingEntryType,
-    error::{ZomeApiError, ZomeApiResult},
+    error::ZomeApiResult,
     holochain_persistence_api::{
-        hash::HashString,
         cas::content::{
             Address,
         },
@@ -14,22 +13,19 @@ use hdk::{
     },
     holochain_core_types::{
         entry::Entry,
-        error::HolochainError,
         dna::entry_types::Sharing,
-        validation::EntryAction,
         validation::EntryValidationData
     },
 };
-// use serde::Serialize;
-// use serde_json::{self, json};
+use crate::validate::*;
 use super::request;
 use super::response;
 use super::invoice;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
-    response_hash: HashString,
-    client_signature: HashString, // signed response_hash
+    response_commit: Address,
+    client_signature: AgentSignature, // signed response_hash
 }
 
 pub fn service_log_definition() -> ValidatingEntryType {
@@ -50,7 +46,7 @@ pub fn service_log_definition() -> ValidatingEntryType {
 fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), String> {
     match context {
         EntryValidationData::Create{entry:obj,validation_data:_} => match obj {
-            ServiceLog { response_hash: hash, .. } => match hdk::get_entry(&hash) {
+            ServiceLog { response_commit: hash, .. } => match hdk::get_entry(&hash) {
                 Ok(maybe_entry) => match maybe_entry {
                     Some(_) => Ok(()),
                     None => Err("HostResponse entry not found!".to_string())
@@ -77,8 +73,8 @@ pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {
 
 fn _get_original_request(address: Address) -> ZomeApiResult<request::ClientRequest> {
     let log : ServiceLog = hdk::utils::get_as_type(address)?;
-    let response : response::HostResponse = hdk::utils::get_as_type(log.response_hash)?;
-    hdk::utils::get_as_type(response.request_hash)
+    let response : response::HostResponse = hdk::utils::get_as_type(log.response_commit)?;
+    hdk::utils::get_as_type(response.request_commit)
 }
 
 pub fn list_uninvoiced_servicelogs() -> Vec<Address> {

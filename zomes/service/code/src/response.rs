@@ -1,10 +1,9 @@
-#[allow(unused_imports)]
+
 use hdk::{
     self,
     entry_definition::ValidatingEntryType,
-    error::{ZomeApiError, ZomeApiResult},
+    error::ZomeApiResult,
     holochain_persistence_api::{
-        hash::HashString,
         cas::content::{
             Address,
         },
@@ -14,14 +13,12 @@ use hdk::{
     },
     holochain_core_types::{
         entry::Entry,
-        error::HolochainError,
         dna::entry_types::Sharing,
-        validation::EntryAction,
         validation::EntryValidationData
     },
 };
-// use serde::Serialize;
-// use serde_json::{self, Value};
+
+use crate::validate::*; // AgentId, AgentSignature, Digest, ...
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct HostingStats {
@@ -32,11 +29,11 @@ pub struct HostingStats {
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct HostResponse {
-    pub request_hash: HashString,
+    pub request_commit: Address,
+    pub response_digest: Digest,
     pub hosting_stats: HostingStats,
-    pub response_data_hash: HashString,
-    pub response_log: String, // not included into the signature
-    pub host_signature: HashString, // signed request_hash + response_data_hash + hosting_stats
+    pub response_log: String,
+    pub host_signature: AgentSignature
 }
 
 pub fn host_response_definition() -> ValidatingEntryType {
@@ -57,7 +54,8 @@ pub fn host_response_definition() -> ValidatingEntryType {
 fn validate_response(context: EntryValidationData<HostResponse>) -> Result<(), String> {
     match context {
         EntryValidationData::Create{entry:obj,validation_data:_} => match obj {
-            HostResponse { request_hash: hash, .. } => match hdk::get_entry(&hash) {
+            // Ensures that the response references an existing 
+            HostResponse { request_commit: hash, .. } => match hdk::get_entry(&hash) {
                 Ok(maybe_entry) => match maybe_entry {
                     Some(_) => Ok(()),
                     None => Err("ClientRequest entry not found!".to_string())

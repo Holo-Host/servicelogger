@@ -10,6 +10,9 @@ extern crate holochain_persistence_api;
 #[macro_use]
 extern crate holochain_json_derive;
 
+#[macro_use]
+extern crate failure;
+
 use hdk::{
     error::ZomeApiResult,
     holochain_persistence_api::{
@@ -25,11 +28,12 @@ use hdk::{
     },
 };
 
+mod invoice;
 mod request;
 mod response;
 mod servicelog;
-mod invoice;
 mod setup;
+mod validate;
 
 // see https://developer.holochain.org/api/0.0.4/hdk/ for info on using the hdk library
 
