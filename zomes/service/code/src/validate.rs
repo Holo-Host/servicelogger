@@ -8,6 +8,19 @@ use std::{fmt, str::FromStr, convert::{From, TryFrom, TryInto}, };
 use hdk::{
     holochain_persistence_api::{
         hash::HashString,
+        cas::content::Address,
+    },
+    holochain_json_api::{
+        json::JsonString, error::JsonError,
+    },
+    holochain_wasm_utils::api_serialization::{
+        get_entry::{GetEntryResult, GetEntryOptions, GetEntryResultType},
+    },
+    holochain_core_types::{
+        entry::{AppEntryValue, Entry},
+        error::HolochainError,
+        signature::Provenance,
+        time::Iso8601,
     },
 };
 
@@ -259,4 +272,50 @@ impl<'d> Deserialize<'d> for Digest {
         Digest::from_str(&hash_str)
             .map_err(de::Error::custom)
     }
+}
+
+
+/// Partial ChainHeader details for an App Entry entry of type R
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct CommitMeta {
+    pub address: Address,
+    pub provenance: Provenance,
+    pub timestamp: Iso8601,
+}
+
+/// Get and decode an App Entry type, and return it with some commit metadata
+pub fn get_meta_and_entry_as_type<R: TryFrom<AppEntryValue>>(
+    address: Address
+) -> Result<(CommitMeta,R), HolochainError> {
+    let get_result = hdk::get_entry_result(
+        &address,
+        GetEntryOptions {
+            entry: true,
+            headers: true,
+            ..Default::default()
+        }
+    )?;
+    if let GetEntryResult { result: GetEntryResultType::Single(item)} = get_result {
+        if let Some(Entry::App(_, entry_value)) = item.entry { // None, if nothing found
+            if let Ok(entry) = R::try_from(entry_value.to_owned()) {
+                if let [header] = item.headers.as_slice() {
+                    if let [provenance] = header.provenances().as_slice() {
+                        let commit_meta = CommitMeta {
+                            address,
+                            provenance: provenance.to_owned(),
+                            timestamp: header.timestamp().to_owned(),
+                        };
+                        return Ok((commit_meta,entry))
+                    }
+                }
+            }
+            return Err(format!(
+                "No entry of designated type at address {}: {:?}",
+                address, entry_value
+            ).into())
+        }
+    }
+    Err(format!(
+        "No entry at address {}", address
+    ).into())
 }

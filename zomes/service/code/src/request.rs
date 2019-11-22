@@ -6,7 +6,6 @@ use hdk::{
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
     holochain_persistence_api::{
-        hash::HashString,
         cas::content::{
             Address,
         },
@@ -40,48 +39,59 @@ use crate::validate::*; // Agent, AgentSignature, Digest, ...
 /// type, which de/serializes to hcid::HcidEncoding::with_kind("hcs0"): "HcScJ...".  Likewise,
 /// Signature does no validation.
 
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct CallSpec {
+    pub zome: String,
+    pub function: String,
+}
+
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct ClientPayload {
+    pub hash: Digest,
+    pub signature: AgentSignature,
+}
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct ClientRequest {
-    agent_id: Agent, // ed25519 public key, in "HcSc..." form
-    instance_id: HashString, // SHA256 hash of the Conductor DNA Instance being targeted, in "Qm..." form
-    call_spec: String, // For categorization, eg. blog/create_post
-    request_digest: Digest, // SHA256 Digest of full zome call spec + args, in "Qm..." form
-    agent_signature: AgentSignature, // ed25519 signature of request_hash, in base-64 form
+    pub agent_id: Agent,
+    pub call_spec: CallSpec,
+    pub payload: ClientPayload,
 }
 
 pub fn client_request_definition() -> ValidatingEntryType {
     entry!(
         name: "client_request",
-        description: "this it the entry defintion for a client request",
-        sharing: Sharing::Public,
+        description: "Start of a client Agent request",
+        sharing: Sharing::Private,
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
 
-        validation: |_validation_data: hdk::EntryValidationData<ClientRequest>| {
-            validate_request(_validation_data)
+        validation: |validation_data: hdk::EntryValidationData<ClientRequest>| {
+            validate_request(validation_data)
         }
     )
 }
 
-fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), String> {
+fn validate_request(
+    context: EntryValidationData<ClientRequest>
+) -> Result<(), String> {
     match context {
         EntryValidationData::Create{entry:client_request, validation_data: _} => {
             // The Client Agent must have signed the `client_request.request_digest`.
 
             // Base-58 -> Result<Vec<u8>, FromBase58Error>
             if client_request.agent_id.verify(
-                client_request.request_digest.to_bytes(),
-                &client_request.agent_signature
+                client_request.payload.hash.to_bytes(),
+                &client_request.payload.signature
             ) {
                 Ok(())
             } else {
                 Err(format!(
-                    "Signature invalid for ClientRequest {} with Agent {} and Signature {}",
-                    client_request.request_digest,
+                    "Signature invalid for Agent {}, for ClientRequest Digest {} and Signature {}",
                     client_request.agent_id,
-                    client_request.agent_signature
+                    client_request.payload.hash,
+                    client_request.payload.signature
                 ))
             }
         } 
@@ -92,14 +102,30 @@ fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), S
 }
 
 
-pub fn handle_log_request(entry: ClientRequest) -> ZomeApiResult<Address> {
-    let entry = Entry::App("client_request".into(), entry.into());
+pub fn handle_log_request(
+    agent_id: Agent,
+    call_spec: CallSpec,
+    payload: ClientPayload
+) -> ZomeApiResult<Address> {
+    let entry = Entry::App(
+        "client_request".into(),
+        ClientRequest { agent_id, call_spec, payload }.into()
+    );
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
 }
 
-pub fn handle_get_request(address: Address) -> ZomeApiResult<Option<Entry>> {
-    hdk::get_entry(&address)
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct ClientRequestMeta {
+    pub meta: CommitMeta,
+    pub request: ClientRequest,
+}
+
+pub fn handle_get_request(
+    address: Address
+) -> ZomeApiResult<ClientRequestMeta> {
+    let (meta,request) = get_meta_and_entry_as_type::<ClientRequest>(address)?;
+    Ok(ClientRequestMeta { meta, request })
 }
 
 #[cfg(test)]
@@ -149,10 +175,14 @@ mod tests {
         let client_request_str = format!(
             r#"{{
   "agent_id": "{}",
-  "instance_id": "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  "call_spec": "blog/create_post",
-  "request_digest": "{}",
-  "agent_signature": "{}"
+  "call_spec": {{
+    "zome": "blog",
+    "function": "create_post"
+  }},
+  "payload": {{
+    "hash": "{}",
+    "signature": "{}"
+  }}
 }}"#,
             agent_id, request_digest, agent_signature );
         println!("ClientRequest: {}", client_request_str);
@@ -187,10 +217,10 @@ mod tests {
             13, 92, 202, 16, 70, 4, 56, 120
         ];
         // Round-trip the AgentSignature
-        assert_eq!(client_request.agent_signature.clone().to_bytes()[..32], sig_bytes);
+        assert_eq!(client_request.payload.signature.clone().to_bytes()[..32], sig_bytes);
         assert_eq!(
-            AgentSignature::from_bytes(&client_request.agent_signature.clone().to_bytes()).unwrap(),
-            client_request.agent_signature
+            AgentSignature::from_bytes(&client_request.payload.signature.clone().to_bytes()).unwrap(),
+            client_request.payload.signature
         );
     }
 }

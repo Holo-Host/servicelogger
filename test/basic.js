@@ -16,21 +16,28 @@ const setup_prefs = {
 }
 
 const sample_request1 = {
-  agent_id: "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  instance_id: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  call_spec: "blog/create_post",
-  request_digest: "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
-  agent_signature: "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
+  "call_spec": {
+    "zome": "blog",
+    "function": "create_post"
+  },
+  "payload": {
+    "hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+    "signature": "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+  }
 }
 
 const sample_request2 = {
-  agent_id: "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  instance_id: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  call_spec: "blog/create_post",
-  request_digest: "QmNQa1FSTXNHmrjjfgUW3Px3Vkke4oKiFWdigWkYSux2Pi",
-  agent_signature: "sMZaWZu090wdnOcCxAeGG8SeTDyi+T7SWd+9WovxFcvTmvg3jRrX/6oPMm+40VMIBced9LpqR4Oo22qBH30RCw=="
+  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
+  "call_spec": {
+    "zome": "blog",
+    "function": "create_post"
+  },
+  "payload": {
+    "hash": "QmNQa1FSTXNHmrjjfgUW3Px3Vkke4oKiFWdigWkYSux2Pi",
+    "signature": "sMZaWZu090wdnOcCxAeGG8SeTDyi+T7SWd+9WovxFcvTmvg3jRrX/6oPMm+40VMIBced9LpqR4Oo22qBH30RCw=="
+  }
 }
-
 
 const sample_response1 = {
   request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
@@ -63,31 +70,35 @@ scenario('can log a client request', async (s, t) => {
 
     var whoami = await app.call('app', "service", "whoami", {})
     console.log("***DEBUG***: whoami == " + JSON.stringify( whoami ));
-    t.deepEqual(whoami.dna_name, "ServiceLogger")
+    t.deepEqual(util.get( ['Ok', 'dna_name'], whoami ), "ServiceLogger")
     
     var setup = await app.call('app', "service", "setup", {"entry": setup_prefs})
     console.log("***DEBUG***: setup == " + JSON.stringify( setup ));
 
-    const addr = await app.call('app', "service", "log_request", {entry: sample_request1})
+    const addr = await app.call('app', "service", "log_request", sample_request1)
 
-    t.deepEqual(addr, { Ok: 'QmesF7KfL155meRTGzZQnqdUnYSYA4Kjrn2iL7tkCWxDCi' })
+    t.deepEqual(addr, { Ok: 'QmV4ec4r7bVKxeH6H96nmNozDwFLSZTa8TBCmc3KRAfJs5' })
 
     const result = await app.call('app', "service", "get_request", {"address": addr.Ok})
+    console.log("***DEBUG***: get_request == " + JSON.stringify( result ));
 
-    t.deepEqual(result, { Ok: { App: [ 'client_request', JSON.stringify(sample_request1) ] } })
+    t.deepEqual( util.get( ['Ok', 'meta', 'address'], result ), addr.Ok )
+    t.deepEqual( util.get( ['Ok', 'request', 'payload', 'hash'], result ), sample_request1.payload.hash )
 
     // Ensure that signature validation occurs
-    const sig_fail = await app.call('app', "service", "log_request", {
-	entry: {
-	    ...sample_request1,
-	    agent_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+    let sample_request1_badsig = {
+	...sample_request1,
+	payload: {
+	    hash: sample_request1.payload.hash,
+	    signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
 	}
-    })
+    }
+    const sig_fail = await app.call('app', "service", "log_request", sample_request1_badsig )
     console.log("***DEBUG***: sig_fail == " + JSON.stringify( sig_fail ))
     let sig_fail_err = util.get( ['Err', 'Internal'], sig_fail )
     console.log("***DEBUG***: sig_fail_err == " + JSON.stringify( sig_fail_err ))
-    t.ok(sig_fail_err && sig_fail_err.includes("Signature invalid for ClientRequest"),
-	 "should generate an Signature invlid: " + JSON.stringify( sig_fail ))
+    t.ok(sig_fail_err && sig_fail_err.includes("Signature invalid"),
+	 "should generate an 'Signature invalid ...': " + JSON.stringify( sig_fail ))
 })
 
 
@@ -98,7 +109,7 @@ scenario('can log a host response', async (s, t) => {
     // performs initial setup
     await app.call('app', "service", "setup", {"entry": setup_prefs})
 
-    const request_addr = await app.call('app', "service", "log_request", {"entry" : sample_request1})
+    const request_addr = await app.call('app', "service", "log_request", sample_request1)
 
     // try to log a response with a bad request_commit
     const bad_response = {
@@ -153,7 +164,7 @@ scenario('can create a servicelog', async (s, t) => {
     await app.call('app', "service", "setup", {"entry": setup_prefs})  
 
     // Logs a sample request
-    const req = await app.call('app', "service", "log_request", {"entry" : sample_request1})
+    const req = await app.call('app', "service", "log_request", sample_request1)
 
     const addr = await app.call('app', "service", "log_response", {
 	entry: {
@@ -162,7 +173,7 @@ scenario('can create a servicelog', async (s, t) => {
 	}
     })
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
-    t.deepEqual( addr, { Ok: 'QmW6gVatshaxsuZ3sjKr444HFVwC7NiEJ69cwLyvqG5M2E' })
+    t.deepEqual( addr, { Ok: 'QmetEa4CgG6KQrWqR7ekBo4qc5LMMdczd24iqafUvaBE9t' })
 
     // try to log a bad service_log 
     const bad_service_log = {
@@ -195,7 +206,7 @@ scenario('log then list all servicelog', async (s, t) => {
     await app.call('app', "service", "setup", {"entry": setup_prefs})  
 
     // Logs a sample request
-    const req1 = await app.call('app', "service", "log_request", {entry: sample_request1})
+    const req1 = await app.call('app', "service", "log_request", sample_request1)
     console.log("***DEBUG***: log_request 1: "+JSON.stringify( req1 ))
 
     // Log a first response & service_log
@@ -217,7 +228,7 @@ scenario('log then list all servicelog', async (s, t) => {
     console.log("***DEBUG***: log_service 1: "+JSON.stringify( sl_addr1 ))
 
     // Log a second response & service_log
-    const req2 = await app.call('app', "service", "log_request", {entry: sample_request2})
+    const req2 = await app.call('app', "service", "log_request", sample_request2)
     const addr2 = await app.call('app', "service", "log_response", {
 	entry: {
 	    ...sample_response2,

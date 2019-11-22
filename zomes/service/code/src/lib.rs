@@ -37,6 +37,9 @@ use hdk::{
 
 use std::convert::TryInto;
 
+use crate::request::{ClientPayload, CallSpec, ClientRequestMeta};
+use crate::validate::{Agent};
+
 mod invoice;
 mod request;
 mod response;
@@ -92,15 +95,17 @@ pub mod service {
 
     #[zome_fn("hc_public")]
     fn log_request(
-        entry: request::ClientRequest,
+        agent_id: Agent,
+        call_spec: CallSpec,
+        payload: ClientPayload,
     ) -> ZomeApiResult<Address> {
-        request::handle_log_request(entry)
+        request::handle_log_request(agent_id, call_spec, payload)
     }
 
     #[zome_fn("hc_public")]
     fn get_request(
         address: Address
-    ) -> ZomeApiResult<Option<Entry>> {
+    ) -> ZomeApiResult<ClientRequestMeta> {
         request::handle_get_request(address)
     }
 
