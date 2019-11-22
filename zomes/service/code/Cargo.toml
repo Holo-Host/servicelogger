@@ -10,6 +10,7 @@ ed25519-dalek = { version = "1.0.0-pre.2", features = ["nightly", "serde"] }
 failure = "0.1.5"
 hcid = "0.0.6"
 hdk = { path = "../../../holochain-rust/crates/hdk" }
+hdk_proc_macros = { path = "../../../holochain-rust/crates/hdk_v2" }
 holochain_json_derive = "=0.0.17"
 holochain_persistence_api = "=0.0.11"
 holochain_wasm_utils = { path = "../../../holochain-rust/crates/wasm_utils" }

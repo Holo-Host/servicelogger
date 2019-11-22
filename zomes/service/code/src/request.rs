@@ -22,7 +22,7 @@ use hdk::{
     },
 };
 
-use crate::validate::*; // AgentId, AgentSignature, Digest, ...
+use crate::validate::*; // Agent, AgentSignature, Digest, ...
 
 /// ClientRequest represents the start of a unique Client Agent interaction with a Holochain
 /// Instance in this Host.  Its commit's ChainHeader contains the Hosts' timestamp indicating when
@@ -36,14 +36,14 @@ use crate::validate::*; // AgentId, AgentSignature, Digest, ...
 /// 
 /// TODO: An Address = HashString(String) does no validation on deserialization.  If it is converted
 /// to/from bytes, it is assumed to be a base-58 encoded multihash hash::SHA256 (ie. "Qm..."); see
-/// holochain-persistence/crates/holochain_persistence_api/src/hash.rs.  We should use an AgentId
+/// holochain-persistence/crates/holochain_persistence_api/src/hash.rs.  We should use an Agent
 /// type, which de/serializes to hcid::HcidEncoding::with_kind("hcs0"): "HcScJ...".  Likewise,
 /// Signature does no validation.
 
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct ClientRequest {
-    agent_id: AgentId, // ed25519 public key, in "HcSc..." form
+    agent_id: Agent, // ed25519 public key, in "HcSc..." form
     instance_id: HashString, // SHA256 hash of the Conductor DNA Instance being targeted, in "Qm..." form
     call_spec: String, // For categorization, eg. blog/create_post
     request_digest: Digest, // SHA256 Digest of full zome call spec + args, in "Qm..." form
@@ -78,7 +78,7 @@ fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), S
                 Ok(())
             } else {
                 Err(format!(
-                    "Signature invalid for ClientRequest {} with AgentId {} and Signature {}",
+                    "Signature invalid for ClientRequest {} with Agent {} and Signature {}",
                     client_request.request_digest,
                     client_request.agent_id,
                     client_request.agent_signature
@@ -116,9 +116,9 @@ mod tests {
         let secret_key = ed25519_dalek::SecretKey::from_bytes( &secret ).unwrap();
         let public_key = ed25519_dalek::PublicKey::from( &secret_key );
         let secret_key_exp = ed25519_dalek::ExpandedSecretKey::from( &secret_key );
-        let agent_id =  AgentId::from( &secret_key );
-        assert_eq!( AgentId::from( public_key.clone() ), agent_id );
-        assert_eq!( AgentId::try_from( public_key.to_bytes().to_vec().as_slice() ).unwrap(), agent_id );
+        let agent_id =  Agent::from( &secret_key );
+        assert_eq!( Agent::from( public_key.clone() ), agent_id );
+        assert_eq!( Agent::try_from( public_key.to_bytes().to_vec().as_slice() ).unwrap(), agent_id );
         
         
         // Lets make up a request digest, and test Digest round-tripping

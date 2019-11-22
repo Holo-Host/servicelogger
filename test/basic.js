@@ -61,6 +61,10 @@ const sample_response2 = {
 scenario('can log a client request', async (s, t) => {
     const { app } = await s.players({app: one('app')}, true)
 
+    var whoami = await app.call('app', "service", "whoami", {})
+    console.log("***DEBUG***: whoami == " + JSON.stringify( whoami ));
+    t.deepEqual(whoami.dna_name, "ServiceLogger")
+    
     var setup = await app.call('app', "service", "setup", {"entry": setup_prefs})
     console.log("***DEBUG***: setup == " + JSON.stringify( setup ));
 
@@ -134,7 +138,7 @@ scenario('can log a host response', async (s, t) => {
     let host_response_entry = util.get( ['Ok', 'App'], result );
     t.ok( host_response_entry )
     if ( host_response_entry ) {
-	// The tuple 'type,"Entry JSON"' is returned
+	// The tuple "type","Entry JSON"' is returned
 	let host_response = JSON.parse( host_response_entry[1] )
 	console.log("***DEBUG***: host_response == " + JSON.stringify( host_response ))
 	t.deepEqual(host_response, response)

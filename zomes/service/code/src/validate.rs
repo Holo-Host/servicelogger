@@ -11,16 +11,16 @@ use hdk::{
     },
 };
 
-/// Validates and round-trips an AgentId from a ed25519 PublicKey, and validates AgentSignatures
+/// Validates and round-trips an Agent from a ed25519 PublicKey, and validates AgentSignatures
 #[derive(Debug, Clone, PartialEq)]
-pub struct AgentId(ed25519_dalek::PublicKey);
+pub struct Agent(ed25519_dalek::PublicKey);
 
 lazy_static! {
-    pub static ref AGENT_ID_CODEC: hcid::HcidEncoding =
-        HcidEncoding::with_kind("hcs0").expect("Couldn't init AgentId hcid 'hcs0' codec.");
+    pub static ref AGENT_CODEC: hcid::HcidEncoding =
+        HcidEncoding::with_kind("hcs0").expect("Couldn't init Agent hcid 'hcs0' codec.");
 }
 
-impl AgentId {
+impl Agent {
     #[inline]
     pub fn to_bytes(&self) -> [u8; ed25519_dalek::PUBLIC_KEY_LENGTH] {
         self.0.to_bytes()
@@ -29,8 +29,8 @@ impl AgentId {
     #[inline]
     pub fn from_bytes(
         bytes: &[u8]
-    ) -> Result<AgentId, Error> {
-        Ok(AgentId(ed25519_dalek::PublicKey::from_bytes( bytes )?))
+    ) -> Result<Agent, Error> {
+        Ok(Agent(ed25519_dalek::PublicKey::from_bytes( bytes )?))
     }
 
     pub fn verify(
@@ -43,46 +43,46 @@ impl AgentId {
     }
 }
 
-// An AgentId is indeed an ed25519 Public key, derivable from either a Public/Secret Key, or
+// An Agent is indeed an ed25519 Public key, derivable from either a Public/Secret Key, or
 // the bytes of the PublicKey.
-impl From<ed25519_dalek::PublicKey> for AgentId {
-    fn from(public_key: ed25519_dalek::PublicKey) -> AgentId {
-        AgentId(public_key)
+impl From<ed25519_dalek::PublicKey> for Agent {
+    fn from(public_key: ed25519_dalek::PublicKey) -> Agent {
+        Agent(public_key)
     }
 }
 
-impl From<&ed25519_dalek::SecretKey> for AgentId {
-    fn from(secret_key: &ed25519_dalek::SecretKey) -> AgentId {
-        AgentId(secret_key.into())
+impl From<&ed25519_dalek::SecretKey> for Agent {
+    fn from(secret_key: &ed25519_dalek::SecretKey) -> Agent {
+        Agent(secret_key.into())
     }
 }
 
-impl TryFrom<&[u8]> for AgentId {
+impl TryFrom<&[u8]> for Agent {
     type Error = Error;
     fn try_from(bytes: &[u8]) -> Result<Self, Self::Error> {
-        AgentId::from_bytes(bytes)
+        Agent::from_bytes(bytes)
     }
 }
 
-impl fmt::Display for AgentId {
+impl fmt::Display for Agent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", AGENT_ID_CODEC.encode(&self.to_bytes())
+        write!(f, "{}", AGENT_CODEC.encode(&self.to_bytes())
                .map_err(|_e| std::fmt::Error)?)
     }
 }
 
-impl FromStr for AgentId {
+impl FromStr for Agent {
     type Err = Error;
     fn from_str(agent_id: &str) -> Result<Self, Self::Err> {
-        Ok(AgentId(
+        Ok(Agent(
             ed25519_dalek::PublicKey::from_bytes(
-                &AGENT_ID_CODEC.decode(agent_id)?
+                &AGENT_CODEC.decode(agent_id)?
             )?
         ))
     }
 }
 
-impl Serialize for AgentId {
+impl Serialize for Agent {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -91,14 +91,14 @@ impl Serialize for AgentId {
     }
 }
 
-impl<'d> Deserialize<'d> for AgentId {
+impl<'d> Deserialize<'d> for Agent {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'d>,
     {
         let agent_id = String::deserialize(deserializer)?; // HcScj...
         Ok(
-            AgentId::from_str(&agent_id)
+            Agent::from_str(&agent_id)
                 .map_err(de::Error::custom)?
         )
     }
