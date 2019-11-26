@@ -1,5 +1,6 @@
 const { one } = require('./config')
 const util = require('./util')
+const json_stable_stringify = require('json-stable-stringify')
 
 module.exports = scenario => {
 
@@ -15,28 +16,38 @@ const setup_prefs = {
   dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
 }
 
+// TODO: these are constructed w/ a host_id that *matches* the default one generated for Sim2h Scenario tests,
+// because hdk::sign doesn't allow signing of arbitrary JSON-serialized data (ie. w/ escapes).
 const sample_request1 = {
   "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  "call_spec": {
-    "zome": "blog",
-    "function": "create_post"
+  "request": {
+    "timestamp": "2019-11-25T05:48:34.123+07:00",
+    "host_id": "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz",
+    "call_spec": {
+      "hha_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+      "dna_alias": "openbook",
+      "zome": "blog",
+      "function": "create_post",
+      "args_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51"
+    }
   },
-  "payload": {
-    "hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
-    "signature": "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
-  }
+  "request_signature": "eILE1NJsxw2ANRpKzKV1r9J6pJDJlTnDtWKoAWOuR6h5FydqgGIexqucNi/yZLHmRT7OFFdR4dangGQjk86OAA=="
 }
 
 const sample_request2 = {
   "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  "call_spec": {
-    "zome": "blog",
-    "function": "create_post"
+  "request": {
+    "timestamp": "2019-11-25T05:48:34.123+07:00",
+    "host_id": "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz",
+    "call_spec": {
+      "hha_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+      "dna_alias": "openbook",
+      "zome": "blog",
+      "function": "create_post",
+      "args_hash": "QmfZy5bvk7a3DQAjCbGNtmrPXWkyVvPrdnZMyBZ5q5ieKG"
+    }
   },
-  "payload": {
-    "hash": "QmNQa1FSTXNHmrjjfgUW3Px3Vkke4oKiFWdigWkYSux2Pi",
-    "signature": "sMZaWZu090wdnOcCxAeGG8SeTDyi+T7SWd+9WovxFcvTmvg3jRrX/6oPMm+40VMIBced9LpqR4Oo22qBH30RCw=="
-  }
+  "request_signature": "aaHZg6qaeRhbiYoJCN9oN3vxJIsuVigQxH2OTDWvfVHRk7QbRBHT+Ay0k50q94VKGRe1J+lq1YRhK1l5BgarAg=="
 }
 
 const sample_response1 = {
@@ -75,29 +86,66 @@ scenario('can log a client request', async (s, t) => {
     var setup = await app.call('app', "service", "setup", {"entry": setup_prefs})
     console.log("***DEBUG***: setup == " + JSON.stringify( setup ));
 
+    // We need to compute the correct signature for a request w/ a private key we have -- our own.
+
+    var test1 = await app.call('app', "service", "sign", { payload: "'hello'" })
+    console.log(`***DEBUG***: test1 == ` + JSON.stringify( test1 ));
+    t.ok(test1.Ok)
+
+    var test2 = await app.call('app', "service", "sign", { payload: "\"hello\"" })
+    console.log(`***DEBUG***: test2 == ` + JSON.stringify( test2 ));
+  //t.ok(test2.Ok) // TODO: should succeed
+
+    var signature1 = await app.call('app', "service", "sign", {
+	payload: json_stable_stringify( sample_request1.request )
+    })
+    console.log(`***DEBUG***: signature1 == ` + JSON.stringify( signature1 ));
+  //t.ok(signature1.Ok) // TODO: should succeed
+    var request1 = {
+	...sample_request1,
+	request_signature: signature1.Ok
+    }
+    // Use the request with the computed signature
+  //const addr = await app.call('app', "service", "log_request", request1)
+
     const addr = await app.call('app', "service", "log_request", sample_request1)
 
-    t.deepEqual(addr, { Ok: 'QmV4ec4r7bVKxeH6H96nmNozDwFLSZTa8TBCmc3KRAfJs5' })
+    t.deepEqual(addr, { Ok: 'QmeQbPutRefwE7SRwZrgCZguj5Zn9zYNZiNEZb5Sdb671a' })
 
     const result = await app.call('app', "service", "get_request", {"address": addr.Ok})
     console.log("***DEBUG***: get_request == " + JSON.stringify( result ));
 
     t.deepEqual( util.get( ['Ok', 'meta', 'address'], result ), addr.Ok )
-    t.deepEqual( util.get( ['Ok', 'request', 'payload', 'hash'], result ), sample_request1.payload.hash )
+    t.deepEqual( util.get( ['Ok', 'client_request', 'request', 'call_spec', 'args_hash'], result ),
+		 sample_request1.request.call_spec.args_hash )
 
-    // Ensure that signature validation occurs
-    let sample_request1_badsig = {
-	...sample_request1,
-	payload: {
-	    hash: sample_request1.payload.hash,
-	    signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
-	}
+
+    // Ensure that host_id and signature validation occurs.
+    let request1_bad_host = {
+	agent_id: sample_request1.agent_id,
+	request: {
+	    timestamp: sample_request1.request.timestamp,
+	    host_id: sample_request1.agent_id, // valid, but not correct
+	    call_spec: sample_request1.request.call_spec
+	},
+	request_signature: sample_request1.request_signature
     }
-    const sig_fail = await app.call('app', "service", "log_request", sample_request1_badsig )
+    const host_fail = await app.call('app', "service", "log_request", request1_bad_host )
+    console.log("***DEBUG***: sig_fail == " + JSON.stringify( host_fail ))
+    let host_fail_err = util.get( ['Err', 'Internal'], host_fail )
+    console.log("***DEBUG***: host_fail_err == " + JSON.stringify( host_fail_err ))
+    t.ok(host_fail_err && host_fail_err.includes("doesn't match request"),
+	 "should generate an 'Host Agent ... doesn't match: " + JSON.stringify( host_fail ))
+
+    let request1_bad_sig = {
+	...sample_request1,
+	request_signature: "XxHr36xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxCg=="
+    }
+    const sig_fail = await app.call('app', "service", "log_request", request1_bad_sig )
     console.log("***DEBUG***: sig_fail == " + JSON.stringify( sig_fail ))
     let sig_fail_err = util.get( ['Err', 'Internal'], sig_fail )
     console.log("***DEBUG***: sig_fail_err == " + JSON.stringify( sig_fail_err ))
-    t.ok(sig_fail_err && sig_fail_err.includes("Signature invalid"),
+    t.ok(sig_fail_err && sig_fail_err.includes("invalid for request"),
 	 "should generate an 'Signature invalid ...': " + JSON.stringify( sig_fail ))
 })
 
@@ -173,7 +221,7 @@ scenario('can create a servicelog', async (s, t) => {
 	}
     })
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
-    t.deepEqual( addr, { Ok: 'QmetEa4CgG6KQrWqR7ekBo4qc5LMMdczd24iqafUvaBE9t' })
+    t.deepEqual( addr, { Ok: 'QmQFR9Wz6JffGSQxjnXh8xhZ5yaxv8yje8uMtXB46qHm4A' })
 
     // try to log a bad service_log 
     const bad_service_log = {

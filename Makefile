@@ -47,7 +47,8 @@ test-e2e:	$(DNA)
 	    sim2h_server -p 9000 &
 	@echo "Starting Scenario tests..."; \
 	    RUST_BACKTRACE=1 hc test \
-	        | test/node_modules/faucet/bin/cmd.js
+
+#	        | test/node_modules/faucet/bin/cmd.js
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean

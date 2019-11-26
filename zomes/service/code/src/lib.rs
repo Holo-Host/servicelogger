@@ -37,9 +37,6 @@ use hdk::{
 
 use std::convert::TryInto;
 
-use crate::request::{ClientPayload, CallSpec, ClientRequestMeta};
-use crate::validate::{Agent};
-
 mod invoice;
 mod request;
 mod response;
@@ -93,19 +90,30 @@ pub mod service {
         setup::handle_setup(entry)
     }
 
+    /// For testing, we sometimes need to sign arbitrary things, as the Hosting agent
+    #[zome_fn("hc_public")]
+    fn sign(
+        payload: String
+    ) -> ZomeApiResult<String> {
+        hdk::sign(payload)
+    }
+
+    /// Start of a request by `agent_id`.  The `request_signature` is the `agent_id`'s signature of
+    /// the serialization of [host_id, timestamp, [hha_hash, dna_alias, zome, function, args_hash]].
+    /// The `host_id` *must* be that of the committing host for validation to succeed.
     #[zome_fn("hc_public")]
     fn log_request(
-        agent_id: Agent,
-        call_spec: CallSpec,
-        payload: ClientPayload,
+        agent_id: validate::Agent,
+        request: request::RequestPayload,
+        request_signature: validate::AgentSignature
     ) -> ZomeApiResult<Address> {
-        request::handle_log_request(agent_id, call_spec, payload)
+        request::handle_log_request(agent_id, request, request_signature)
     }
 
     #[zome_fn("hc_public")]
     fn get_request(
         address: Address
-    ) -> ZomeApiResult<ClientRequestMeta> {
+    ) -> ZomeApiResult<request::ClientRequestMeta> {
         request::handle_get_request(address)
     }
 

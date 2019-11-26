@@ -1,8 +1,11 @@
 
-use std::convert::From;
+use std::{
+    convert::From,
+};
 
 use hdk::{
     self,
+    AGENT_ADDRESS,
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
     holochain_persistence_api::{
@@ -17,7 +20,7 @@ use hdk::{
         entry::Entry,
         dna::entry_types::Sharing,
         validation::EntryValidationData,
-
+        time::Iso8601,
     },
 };
 
@@ -27,35 +30,31 @@ use crate::validate::*; // Agent, AgentSignature, Digest, ...
 /// Instance in this Host.  Its commit's ChainHeader contains the Hosts' timestamp indicating when
 /// it started to service the request.
 ///
-/// TODO: Necessary? Each ServiceLogger instance is associated with an conductor DNA Instance...
+/// TODO: Multiple servicelogger's Necessary? Each ServiceLogger instance is associated with an
+/// conductor hApp hash and its DNA Instance(s). The ClientRequest record *uniquely* identifies the
+/// hApp, so a single servicelogger instance can track all request to all hApps.
 /// 
-/// TODO: Is call_spec necessary? Until the corresponding HostResponse is committed, we can not
-/// deduce resource utilization (other than elapsed wall-clock time of request thus far). This may
-/// be useful, to see what kind(s) of requests are blocking for long durations.
-/// 
-/// TODO: An Address = HashString(String) does no validation on deserialization.  If it is converted
-/// to/from bytes, it is assumed to be a base-58 encoded multihash hash::SHA256 (ie. "Qm..."); see
-/// holochain-persistence/crates/holochain_persistence_api/src/hash.rs.  We should use an Agent
-/// type, which de/serializes to hcid::HcidEncoding::with_kind("hcs0"): "HcScJ...".  Likewise,
-/// Signature does no validation.
-
-#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
-pub struct CallSpec {
-    pub zome: String,
-    pub function: String,
-}
-
-#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
-pub struct ClientPayload {
-    pub hash: Digest,
-    pub signature: AgentSignature,
-}
-
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct ClientRequest {
     pub agent_id: Agent,
-    pub call_spec: CallSpec,
-    pub payload: ClientPayload,
+    pub request: RequestPayload,
+    pub request_signature: AgentSignature,
+}
+
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct RequestPayload {
+    timestamp: Iso8601,
+    host_id: Agent,
+    call_spec: CallSpec,
+}
+
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct CallSpec {
+    pub hha_hash: Digest,
+    pub dna_alias: String,
+    pub zome: String,
+    pub function: String,
+    pub args_hash: Digest,
 }
 
 pub fn client_request_definition() -> ValidatingEntryType {
@@ -73,43 +72,48 @@ pub fn client_request_definition() -> ValidatingEntryType {
     )
 }
 
+/// Validate the Private ClientRequest entry.
 fn validate_request(
     context: EntryValidationData<ClientRequest>
 ) -> Result<(), String> {
     match context {
         EntryValidationData::Create{entry:client_request, validation_data: _} => {
-            // The Client Agent must have signed the `client_request.request_digest`.
-
-            // Base-58 -> Result<Vec<u8>, FromBase58Error>
-            if client_request.agent_id.verify(
-                client_request.payload.hash.to_bytes(),
-                &client_request.payload.signature
-            ) {
-                Ok(())
-            } else {
-                Err(format!(
-                    "Signature invalid for Agent {}, for ClientRequest Digest {} and Signature {}",
-                    client_request.agent_id,
-                    client_request.payload.hash,
-                    client_request.payload.signature
+            // This Client request must be destined for this Hosting agent!
+            if client_request.request.host_id.to_string() != AGENT_ADDRESS.to_string() {
+                return Err(format!(
+                    "Host Agent ID {} doesn't match request: {}",
+                    AGENT_ADDRESS.to_string(),
+                    serde_json::to_string(&client_request).unwrap_or(String::from(""))
                 ))
             }
+            // The Client Agent must have signed a standard serialization of the request
+            let request_serialization = serde_json::to_string(&client_request.request)
+                .map_err(|e| e.to_string())?;
+            if ! client_request.agent_id.verify(
+                &request_serialization.as_bytes(), &client_request.request_signature
+            ) {
+                return Err(format!(
+                    "Signature {} invalid for request: {}",
+                    &client_request.request_signature,
+                    serde_json::to_string(&client_request).unwrap_or(String::from(""))
+                ))
+            };
         } 
         _ => {
-            Err("Failed to validate with wrong entry type".to_string())
+            return Err(String::from("Failed to validate with wrong entry type"))
         }
     }
+    Ok(())
 }
-
 
 pub fn handle_log_request(
     agent_id: Agent,
-    call_spec: CallSpec,
-    payload: ClientPayload
+    request: RequestPayload,
+    request_signature: AgentSignature,
 ) -> ZomeApiResult<Address> {
     let entry = Entry::App(
         "client_request".into(),
-        ClientRequest { agent_id, call_spec, payload }.into()
+        ClientRequest { agent_id, request, request_signature }.into()
     );
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
@@ -118,14 +122,14 @@ pub fn handle_log_request(
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct ClientRequestMeta {
     pub meta: CommitMeta,
-    pub request: ClientRequest,
+    pub client_request: ClientRequest,
 }
 
 pub fn handle_get_request(
     address: Address
 ) -> ZomeApiResult<ClientRequestMeta> {
-    let (meta,request) = get_meta_and_entry_as_type::<ClientRequest>(address)?;
-    Ok(ClientRequestMeta { meta, request })
+    let (meta,client_request) = get_meta_and_entry_as_type::<ClientRequest>(address)?;
+    Ok(ClientRequestMeta { meta, client_request })
 }
 
 #[cfg(test)]
@@ -147,80 +151,68 @@ mod tests {
         assert_eq!( Agent::try_from( public_key.to_bytes().to_vec().as_slice() ).unwrap(), agent_id );
         
         
-        // Lets make up a request digest, and test Digest round-tripping
-        let request_digest_bytes: [u8; 32] = [0_u8; 32];
-        let request_digest = Digest::from( request_digest_bytes.clone() );
-        assert_eq!( request_digest.to_bytes(), &request_digest_bytes );
-        let request_digest = Digest::from_bytes( &request_digest_bytes ).unwrap();
-        assert_eq!( request_digest.to_bytes(), &request_digest_bytes );
+        // Lets make up a request args_hash, and test Digest round-tripping
+        let args_hash_bytes = [0_u8; 32];
+        let args_hash = Digest::from( args_hash_bytes.clone() );
+        assert_eq!( args_hash.to_bytes(), &args_hash_bytes );
+        let args_hash = Digest::from_bytes( &args_hash_bytes ).unwrap();
+        assert_eq!( args_hash.to_bytes(), &args_hash_bytes );
 
-        let request_digest_str = "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51";
+        let args_hash_str = "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51";
 
-        let request_digest_def = format!("{}", &request_digest);
-        assert_eq!( request_digest_def, request_digest_str );
+        let args_hash_def = format!("{}", &args_hash);
+        assert_eq!( args_hash_def, args_hash_str );
 
-        assert_eq!( Digest::from_str(request_digest_str).unwrap().to_bytes(),
-                    &request_digest_bytes );
+        assert_eq!( Digest::from_str(args_hash_str).unwrap().to_bytes(),
+                    &args_hash_bytes );
         
-        let request_digest_json = format!(r#""{}""#, request_digest_str);
-        let request_digest_pty = serde_json::to_string_pretty( &request_digest ).unwrap();
-        assert_eq!( request_digest_pty, request_digest_json );
-        let request_digest_json_rec: Digest = serde_json::from_str(&request_digest_json).unwrap();
-        assert_eq!( request_digest_json_rec, request_digest );
-        assert_eq!( request_digest_json_rec.to_bytes(), &request_digest_bytes );
+        let args_hash_json = format!(r#""{}""#, args_hash_str);
+        let args_hash_pty = serde_json::to_string_pretty( &args_hash ).unwrap();
+        assert_eq!( args_hash_pty, args_hash_json );
+        let args_hash_json_rec: Digest = serde_json::from_str(&args_hash_json).unwrap();
+        assert_eq!( args_hash_json_rec, args_hash );
+        assert_eq!( args_hash_json_rec.to_bytes(), &args_hash_bytes );
 
-        let signature = secret_key_exp.sign( request_digest.to_bytes(), &public_key );
-        let agent_signature = AgentSignature::from_bytes( &signature.to_bytes() ).unwrap();
-
+        // We'll test with the computed Client ID, and a Host Agent ID that happens to match our
+        // scenario tests.
+        //
+        // TODO: when hdk::sign allows signing of arbitrary data (ie. doesn't fail on JSON-encoded
+        // data w/ escapes), we can arrange to sign the request from the perspective of any
+        // "testing" Hosting Agnt ID.  Until then -- we can only successfully test in the hands of a
+        // "testing" Hosting Agent ID matching this:
+        let host_id = "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz";
         let client_request_str = format!(
             r#"{{
   "agent_id": "{}",
-  "call_spec": {{
-    "zome": "blog",
-    "function": "create_post"
+  "request": {{
+    "timestamp": "2019-11-25T05:48:34.123+07:00",
+    "host_id": "{}",
+    "call_spec": {{
+      "hha_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+      "dna_alias": "openbook",
+      "zome": "blog",
+      "function": "create_post",
+      "args_hash": "{}"
+    }}
   }},
-  "payload": {{
-    "hash": "{}",
-    "signature": "{}"
-  }}
+  "request_signature": "XxHr36xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxCg=="
 }}"#,
-            agent_id, request_digest, agent_signature );
-        println!("ClientRequest: {}", client_request_str);
-        let client_request: ClientRequest = serde_json::from_str(&client_request_str).unwrap();
+            agent_id, host_id, args_hash);
 
-        let digest2 = Digest::from([1_u8; 32]);
-        let signature2 = secret_key_exp.sign( digest2.to_bytes(), &public_key );
-        let agent_signature2 = AgentSignature::from_bytes( &signature2.to_bytes() ).unwrap();
-        println!("Digest: {}, AgentSignature: {}", digest2, agent_signature2);
-        
-        let digest3 = Digest::from([0xff_u8; 32]);
-        let signature3 = secret_key_exp.sign( digest3.to_bytes(), &public_key );
-        let agent_signature3 = AgentSignature::from_bytes( &signature3.to_bytes() ).unwrap();
-        println!("Digest: {}, AgentSignature: {}", digest3, agent_signature3);
-        
-        
+        // Check round-tripping (not a valid request_signature yet, though...)
+        //println!("ClientRequest str: {}", &client_request_str);
+        let mut client_request: ClientRequest = serde_json::from_str(&client_request_str).unwrap();
         assert_eq!( serde_json::to_string_pretty( &client_request ).unwrap(), client_request_str);
 
-        // Our agent_id should be deterministic
-        let id_bytes: [u8; 32] = [
-            59, 106, 39, 188, 206, 182, 164, 45,
-            98, 163, 168, 208, 42, 111, 13, 115,
-            101, 50, 21, 119, 29, 226, 67, 166,
-            58, 192, 72, 161, 139, 89, 218, 41
-        ];
-        assert_eq!(client_request.agent_id.to_bytes(), id_bytes);
-        // Just 1st 32 bytes of 64-byte sig, for ease of testing
-        let sig_bytes: [u8; 32] = [
-            61, 161, 235, 223, 169, 110, 221, 24,
-            29, 190, 54, 89, 209, 192, 81, 196,
-            49, 240, 86, 165, 173, 106, 151, 166,
-            13, 92, 202, 16, 70, 4, 56, 120
-        ];
-        // Round-trip the AgentSignature
-        assert_eq!(client_request.payload.signature.clone().to_bytes()[..32], sig_bytes);
-        assert_eq!(
-            AgentSignature::from_bytes(&client_request.payload.signature.clone().to_bytes()).unwrap(),
-            client_request.payload.signature
-        );
+        let signature = secret_key_exp.sign( serde_json::to_string( &client_request.request ).unwrap().as_bytes(), &public_key );
+        client_request.request_signature = AgentSignature::from_bytes( &signature.to_bytes() ).unwrap();
+
+        println!("ClientRequest 1 valid: {}", serde_json::to_string_pretty( &client_request ).unwrap());
+
+        // Lets get another w/ different args_hash value
+        client_request.request.call_spec.args_hash = Digest::from([0xff_u8; 32]);
+        let signature2 = secret_key_exp.sign( serde_json::to_string( &client_request.request ).unwrap().as_bytes(), &public_key );
+        client_request.request_signature = AgentSignature::from_bytes( &signature2.to_bytes() ).unwrap();
+        println!("ClientRequest 2 valid: {}", serde_json::to_string_pretty( &client_request ).unwrap());
     }
 }

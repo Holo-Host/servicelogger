@@ -77,6 +77,20 @@ impl TryFrom<&[u8]> for Agent {
     }
 }
 
+impl TryFrom<String> for Agent {
+    type Error = Error;
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Agent::from_str(&s)
+    }
+}
+
+impl TryFrom<&str> for Agent {
+    type Error = Error;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Agent::from_str(s)
+    }
+}
+
 impl fmt::Display for Agent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", AGENT_CODEC.encode(&self.to_bytes())
