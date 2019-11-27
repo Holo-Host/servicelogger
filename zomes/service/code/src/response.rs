@@ -26,7 +26,7 @@ use crate::validate::*; // AgentId, AgentSignature, Digest, ...
 pub struct HostResponse {
     pub request_commit: Address,
     pub response_hash: Digest,
-    pub host_metrics: Metrics,
+    pub host_metrics: HostMetrics,
     pub entries: Vec<HostEntryMeta>
 }
 
@@ -47,7 +47,7 @@ pub fn host_response_definition() -> ValidatingEntryType {
 
 fn validate_response(context: EntryValidationData<HostResponse>) -> Result<(), String> {
     match context {
-        EntryValidationData::Create{entry:obj,validation_data:_} => match obj {
+        EntryValidationData::Create{entry:host_response,validation_data:_} => match host_response {
             // Ensures that the response references an existing request
             HostResponse { request_commit: hash, .. } => match hdk::get_entry(&hash) {
                 Ok(maybe_entry) => match maybe_entry {
@@ -75,12 +75,17 @@ fn validate_response(context: EntryValidationData<HostResponse>) -> Result<(), S
 /// many blocks of Requests, vs. the summation of all Envoy and Conductor (Zome + DHT thread)
 /// activity.
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
-pub struct Metrics {
+pub struct HostMetrics {
+    pub duration: Period,
+    /*
     pub cpu: Cpu,
     pub network: IO,
     pub storage: i64, // in theory, a Zome call could reduce net storage used
+    */
 }
 
+/*
+ *
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct Cpu {
     pub elapsed: Period,
@@ -94,13 +99,15 @@ pub struct IO {
     pub i: u64,
     pub o: u64
 }
+ *
+ */
 
 /// Client Request Entry signing metadata and metrics from the perspective of the Host.
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct HostEntryMeta {
     pub hash: Digest,
     pub hash_signature: AgentSignature,
-    pub host_metrics: Metrics,
+    pub host_metrics: HostMetrics,
 }
 
 /// Commit a Hosting response report.  The `response_hash` is the Digest of the response sent back
@@ -113,7 +120,7 @@ pub struct HostEntryMeta {
 pub fn handle_log_response(
     request_commit: Address,
     response_hash: Digest,
-    host_metrics: Metrics,
+    host_metrics: HostMetrics,
     entries: Vec<HostEntryMeta>
 ) -> ZomeApiResult<Address> {
     let entry = Entry::App(
@@ -135,5 +142,4 @@ pub fn handle_get_response(
 ) -> ZomeApiResult<HostResponseMeta> {
     let (meta,host_response) = get_meta_and_entry_as_type::<HostResponse>(address)?;
     Ok(HostResponseMeta { meta, host_response })
-
 }

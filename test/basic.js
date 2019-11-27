@@ -51,11 +51,19 @@ const sample_request2 = {
 }
 
 const host_metrics = {
+    duration: "3.2s",
+    /*
+     * These are only meaningfully collectible on a per-invoice period.
+     *
     cpu: { elapsed: "3.2s", system: "600ms", user: "1.2s", load: 1.8 },
     network: { i: 12309, o: 7352 },
     storage: 4603
+     *
+     */
 };
 
+
+    
 const sample_response1 = {
     request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
     response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
@@ -70,6 +78,29 @@ const sample_response2 = {
     entries: []
 }
 
+const sample_service1 = {
+  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
+  "response_commit": "Qmc8zvqELGCBCykoKnFuvLquCsSVNVBN3Lp2eEcJdHNakd",
+  "confirmation": {
+    "response_hash": "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+    "client_metrics": {
+      "duration": "1.23s"
+    }
+  },
+  "confirmation_signature": "IrXZ4MRuaIMeN6NtaobSPahlTfQqL+ykLdNUT91tie1qAqT4DC/WXEq1yskwSIKJbg9Qkd1UqVhfOXmXhihCAQ=="
+}
+
+const sample_service2 = {
+  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
+  "response_commit": "QmU84Rqgs2bzBDYsp2too1oR2HYnrG5KxAMYBkcrPzjJ5w",
+  "confirmation": {
+    "response_hash": "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aXyzv",
+    "client_metrics": {
+      "duration": "1.23s"
+    }
+  },
+  "confirmation_signature": "RYpDOlbmNJKSiK/9c5OF2yEum7QCJqiOdP5XxorD/nGggEvCXRva4yZXgYoDXiPS0hAz+ak42HMeuicbQ2CeDw=="
+}
 
 // 1. The client starts a new request for hosting, based on a call from the HC Interceptor
 scenario('can log a client request', async (s, t) => {
@@ -200,29 +231,26 @@ scenario('can create a servicelog', async (s, t) => {
 	request_commit: req.Ok
     })
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
-    t.deepEqual( addr, { Ok: 'QmaaReBEEeuxNtVHEWr4fcQvwCHsfzANYAgPiorBwYKYAq' })
+    t.deepEqual( addr, { Ok: 'Qmc8zvqELGCBCykoKnFuvLquCsSVNVBN3Lp2eEcJdHNakd' })
 
     // try to log a bad service_log 
     const bad_service_log = {
-	response_commit: "xxx-fakeaddr-xxx",
-	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+	...sample_service1,
+	response_commit: 'QmfaKeADDresStVHEWr4fcQvwCHsfzANYAgPiorBwYKYAq',
     }
-    const failure = await app.call('app', "service", "log_service", {"entry": bad_service_log})
+    const failure = await app.call('app', "service", "log_service", bad_service_log)
+    console.log("***DEBUG***: log_service: "+JSON.stringify( failure ))
     t.ok(failure.Err.Internal.includes("HostResponse entry not found!"), "should generate an error")
 
     // then log an actual service_log
-    const service_log = {
-	response_commit: addr.Ok,
-	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
-    }
-
-    const addr2 = await app.call('app', "service", "log_service", {"entry": service_log})
+    const addr2 = await app.call('app', "service", "log_service", sample_service1)
     console.log("***DEBUG***: log_service: "+JSON.stringify( addr2 ))
 
     const result = await app.call('app', "service", "get_service", {"address": addr2.Ok})
     console.log("***DEBUG***: get_service: " + JSON.stringify( result ))
 
-    t.deepEqual(result, { Ok: { App: [ 'service_log', JSON.stringify(service_log) ] } })
+    t.deepEqual( util.get( ['Ok', 'meta', 'address'], result ), addr2.Ok )
+    t.deepEqual( util.get( ['Ok', 'service_log', 'response_commit' ], result ), addr.Ok )
 })
 
 // 4. List all billable ServiceLogs. TODO: filter by start and end time (for pagination)
@@ -243,13 +271,8 @@ scenario('log then list all servicelog', async (s, t) => {
     })
     console.log("***DEBUG***: log_response 1: "+JSON.stringify( addr1 ))
 
-    const service_log1 = {
-	response_commit: addr1.Ok,
-	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
-    }
-    const sl_addr1 = await app.call('app', "service", "log_service", {
-	entry: service_log1
-    })
+    const sl_addr1 = await app.call('app', "service", "log_service", sample_service1)
+
     console.log("***DEBUG***: log_service 1: "+JSON.stringify( sl_addr1 ))
 
     // Log a second response & service_log
@@ -263,9 +286,7 @@ scenario('log then list all servicelog', async (s, t) => {
 	response_commit: addr2.Ok,
 	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
-    const sl_addr2 = await app.call('app', "service", "log_service", {
-	entry: service_log2
-    })
+    const sl_addr2 = await app.call('app', "service", "log_service", sample_service2 )
     console.log("***DEBUG***: log_service 2: "+JSON.stringify( sl_addr2 ))
 
     const results = await app.call('app', "service", "list_uninvoiced_servicelogs", {})

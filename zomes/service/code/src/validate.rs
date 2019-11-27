@@ -259,6 +259,20 @@ impl FromStr for Digest {
     }
 }
 
+impl TryFrom<String> for Digest {
+    type Error = Error;
+    fn try_from(s: String) -> Result<Self, Self::Error> {
+        Digest::from_str(&s)
+    }
+}
+
+impl TryFrom<&str> for Digest {
+    type Error = Error;
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        Digest::from_str(s)
+    }
+}
+
 impl fmt::Display for Digest {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", HashString::from(self.to_vec_encoded()))

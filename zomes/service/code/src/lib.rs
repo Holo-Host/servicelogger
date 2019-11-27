@@ -30,7 +30,6 @@ use hdk::{
     },
     holochain_core_types::{
         agent::AgentId,
-        entry::Entry,
     },
     entry_definition::ValidatingEntryType,
 };
@@ -121,7 +120,7 @@ pub mod service {
     fn log_response(
         request_commit: Address,
         response_hash: validate::Digest,
-        host_metrics: response::Metrics,
+        host_metrics: response::HostMetrics,
         entries: Vec<response::HostEntryMeta>
     ) -> ZomeApiResult<Address> {
         response::handle_log_response(request_commit, response_hash, host_metrics, entries)
@@ -136,15 +135,18 @@ pub mod service {
 
     #[zome_fn("hc_public")]
     fn log_service(
-        entry: servicelog::ServiceLog
+        agent_id: validate::Agent,
+        response_commit: Address,
+        confirmation: servicelog::Confirmation,
+        confirmation_signature: validate::AgentSignature
     ) -> ZomeApiResult<Address> {
-        servicelog::handle_log_service(entry)
+        servicelog::handle_log_service(agent_id, response_commit, confirmation, confirmation_signature)
     }
 
     #[zome_fn("hc_public")]
     fn get_service(
         address: Address
-    ) -> ZomeApiResult<Option<Entry>> {
+    ) -> ZomeApiResult<servicelog::ServiceLogMeta> {
         servicelog::handle_get_service(address)
     }
 
