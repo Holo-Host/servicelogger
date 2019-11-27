@@ -119,15 +119,18 @@ pub mod service {
 
     #[zome_fn("hc_public")]
     fn log_response(
-        entry: response::HostResponse
+        request_commit: Address,
+        response_hash: validate::Digest,
+        host_metrics: response::Metrics,
+        entries: Vec<response::HostEntryMeta>
     ) -> ZomeApiResult<Address> {
-        response::handle_log_response(entry)
+        response::handle_log_response(request_commit, response_hash, host_metrics, entries)
     }
 
     #[zome_fn("hc_public")]
     fn get_response(
         address: Address
-    ) -> ZomeApiResult<Option<Entry>> {
+    ) -> ZomeApiResult<response::HostResponseMeta> {
         response::handle_get_response(address)
     }
 

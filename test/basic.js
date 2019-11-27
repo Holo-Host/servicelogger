@@ -50,28 +50,24 @@ const sample_request2 = {
   "request_signature": "aaHZg6qaeRhbiYoJCN9oN3vxJIsuVigQxH2OTDWvfVHRk7QbRBHT+Ay0k50q94VKGRe1J+lq1YRhK1l5BgarAg=="
 }
 
+const host_metrics = {
+    cpu: { elapsed: "3.2s", system: "600ms", user: "1.2s", load: 1.8 },
+    network: { i: 12309, o: 7352 },
+    storage: 4603
+};
+
 const sample_response1 = {
-  request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
-  hosting_stats: {
-    cpu_seconds: 3.2,
-    bytes_in: 12309,
-    bytes_out: 7352,
-  },
-  response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-  host_signature: "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+    request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
+    response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+    host_metrics,
+    entries: []
 }
 
 const sample_response2 = {
-  request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
-  hosting_stats: {
-    cpu_seconds: 3.3,
-    bytes_in: 4332,
-    bytes_out: 7352,
-  },
-  response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:59 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 5678',
-  host_signature: "PaHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+    request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aStuv",
+    response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aXyzv",
+    host_metrics,
+    entries: []
 }
 
 
@@ -162,16 +158,11 @@ scenario('can log a host response', async (s, t) => {
     // try to log a response with a bad request_commit
     const bad_response = {
 	request_commit: "xxxxxxx-fake-address-xxxxxxx",
-	hosting_stats: {
-	    cpu_seconds: 3.2,
-	    bytes_in: 12309,
-	    bytes_out: 7352,
-	},
-	response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-	response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-	host_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+	response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+	host_metrics,
+	entries: []
     }
-    const rsp_fail = await app.call('app', "service", "log_response", {"entry" : bad_response})
+    const rsp_fail = await app.call('app', "service", "log_response", bad_response)
     console.log("***DEBUG***: rsp_fail == " + JSON.stringify( rsp_fail ));
     let rsp_fail_err = util.get( ['Err', 'Internal'], rsp_fail )
     console.log("***DEBUG***: rsp_fail_err == " + JSON.stringify( rsp_fail_err ));
@@ -181,27 +172,17 @@ scenario('can log a host response', async (s, t) => {
     // Log a valid response
     const response = {
 	request_commit: request_addr.Ok,
-	hosting_stats: {
-	    cpu_seconds: 3.2,
-	    bytes_in: 12309,
-	    bytes_out: 7352,
-	},
-	response_digest: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-	response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-	host_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
+	response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+	host_metrics,
+	entries: []
     }
-    const addr = await app.call('app', "service", "log_response", {"entry" : response})
+    const addr = await app.call('app', "service", "log_response", response)
 
     const result = await app.call('app', "service", "get_response", {"address": addr.Ok})
+    console.log("***DEBUG***: get_response == " + JSON.stringify( result ));
 
-    let host_response_entry = util.get( ['Ok', 'App'], result );
-    t.ok( host_response_entry )
-    if ( host_response_entry ) {
-	// The tuple "type","Entry JSON"' is returned
-	let host_response = JSON.parse( host_response_entry[1] )
-	console.log("***DEBUG***: host_response == " + JSON.stringify( host_response ))
-	t.deepEqual(host_response, response)
-    }
+    t.deepEqual( util.get( ['Ok', 'meta', 'address'], result ), addr.Ok )
+    t.deepEqual( util.get( ['Ok', 'host_response', 'response_hash'], result ), response.response_hash )
 })
 
 // 3. With the client signature on that HostResponse, the Conductor creates a ServiceLog, that is a billable log
@@ -215,13 +196,11 @@ scenario('can create a servicelog', async (s, t) => {
     const req = await app.call('app', "service", "log_request", sample_request1)
 
     const addr = await app.call('app', "service", "log_response", {
-	entry: {
-	    ...sample_response1,
-	    request_commit: req.Ok
-	}
+	...sample_response1,
+	request_commit: req.Ok
     })
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
-    t.deepEqual( addr, { Ok: 'QmQFR9Wz6JffGSQxjnXh8xhZ5yaxv8yje8uMtXB46qHm4A' })
+    t.deepEqual( addr, { Ok: 'QmaaReBEEeuxNtVHEWr4fcQvwCHsfzANYAgPiorBwYKYAq' })
 
     // try to log a bad service_log 
     const bad_service_log = {
@@ -259,10 +238,8 @@ scenario('log then list all servicelog', async (s, t) => {
 
     // Log a first response & service_log
     const addr1 = await app.call('app', "service", "log_response", {
-	entry: {
-	    ...sample_response1,
-	    request_commit: req1.Ok
-	}
+	...sample_response1,
+	request_commit: req1.Ok
     })
     console.log("***DEBUG***: log_response 1: "+JSON.stringify( addr1 ))
 
@@ -278,10 +255,8 @@ scenario('log then list all servicelog', async (s, t) => {
     // Log a second response & service_log
     const req2 = await app.call('app', "service", "log_request", sample_request2)
     const addr2 = await app.call('app', "service", "log_response", {
-	entry: {
-	    ...sample_response2,
-	    request_commit: req2.Ok
-	}
+	...sample_response2,
+	request_commit: req2.Ok
     })
     console.log("***DEBUG***: log_response 2: "+JSON.stringify( addr2 ))
     const service_log2 = {
