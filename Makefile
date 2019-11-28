@@ -15,7 +15,7 @@ nix-%:
 # - If you establish a Nix environment (eg. run `nix-shell` from within holochain-rust, to
 #   gain access to a certain development branch), then you can run these targets to build
 #   and test the 'Zome under that version of holochain-rust
-.PHONY:		rebuild build test test-unit test-e2e
+.PHONY:		rebuild build
 
 rebuild: 	clean build
 
@@ -32,6 +32,7 @@ build:		$(DNA)
 $(DNA):
 	hc package
 
+.PHONY: test test-unit test-e2e test-stress test-sim2h test-node
 test: 		test-unit test-e2e
 
 test-unit:
@@ -40,14 +41,18 @@ test-unit:
 	    -- --nocapture
 
 # End-to-end test of DNA.  Runs a sim2h_server on localhost:9000; the default expected by `hc test`
-test-e2e:	$(DNA)
-	@echo "Setting up Scenario test Javascript..."; \
-	    ( cd test && npm install )
-	@echo "Starting sim2h_server on localhost:9000 (may already be running)..."; \
-	    sim2h_server -p 9000 &
+test-e2e:	$(DNA) test-sim2h test-node
 	@echo "Starting Scenario tests..."; \
 	    RUST_BACKTRACE=1 hc test \
 	        | test/node_modules/faucet/bin/cmd.js
+
+test-node:
+	@echo "Setting up Scenario/Stress test Javascript..."; \
+	    cd test && npm install
+
+test-sim2h:
+	@echo "Starting sim2h_server on localhost:9000 (may already be running)..."; \
+	    sim2h_server -p 9000 &
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
