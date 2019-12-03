@@ -1,10 +1,9 @@
-#[allow(unused_imports)]
+
 use hdk::{
     self,
     entry_definition::ValidatingEntryType,
-    error::{ZomeApiError, ZomeApiResult},
+    error::ZomeApiResult,
     holochain_persistence_api::{
-        hash::HashString,
         cas::content::{
             Address,
         },
@@ -14,22 +13,22 @@ use hdk::{
     },
     holochain_core_types::{
         entry::Entry,
-        error::HolochainError,
         dna::entry_types::Sharing,
-        validation::EntryAction,
-        validation::EntryValidationData
+        validation::EntryValidationData,
+        time::Period,
     },
 };
-// use serde::Serialize;
-// use serde_json::{self, json};
+use crate::validate::*;
 use super::request;
 use super::response;
 use super::invoice;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
-    response_hash: HashString,
-    client_signature: HashString, // signed response_hash
+    agent_id: Agent,
+    response_commit: Address,
+    confirmation: Confirmation,
+    confirmation_signature: AgentSignature, // signed response_hash
 }
 
 pub fn service_log_definition() -> ValidatingEntryType {
@@ -49,36 +48,84 @@ pub fn service_log_definition() -> ValidatingEntryType {
 
 fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), String> {
     match context {
-        EntryValidationData::Create{entry:obj,validation_data:_} => match obj {
-            ServiceLog { response_hash: hash, .. } => match hdk::get_entry(&hash) {
-                Ok(maybe_entry) => match maybe_entry {
-                    Some(_) => Ok(()),
-                    None => Err("HostResponse entry not found!".to_string())
-                }
-                Err(e) => Err(e.to_string())
+        EntryValidationData::Create {
+            entry: ServiceLog {
+                agent_id,
+                response_commit,
+                confirmation,
+                confirmation_signature
             },
-        }
+            validation_data: _
+        } => {
+            // Ensures that the service_log references an existing response
+            let response_meta = response::handle_get_response( response_commit )
+                .map_err(|_| String::from("HostResponse entry not found!"))?;
+            // Ensures that the service_log referenced the agreed response_hash
+            if response_meta.host_response.response_hash != confirmation.response_hash {
+                return Err(String::from("ServiceLog.response_hash didn't match"));
+            }
+            // Ensure Client agent_id actually signed confirmation
+            let confirmation_serialization = serde_json::to_string(&confirmation)
+                .map_err(|e| e.to_string())?;
+            if ! agent_id.verify(
+                &confirmation_serialization.as_bytes(), &confirmation_signature
+            ) {
+                return Err(format!(
+                    "Signature {} invalid for service_log: {}",
+                    &confirmation_signature, &confirmation_serialization
+                ))
+            };
+            Ok(())
+        },
         _ => {
-            Err("Failed to validate with wrong entry type".to_string())
+            Err(String::from("Failed to validate with wrong entry type"))
         }
     }
 }
 
-pub fn handle_log_service(entry: ServiceLog) -> ZomeApiResult<Address> {
-    let entry = Entry::App("service_log".into(), entry.into());
-    let address = hdk::commit_entry(&entry)?;
-
-    return Ok(address);
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct Confirmation {
+    response_hash: Digest,
+    client_metrics: ClientMetrics,
 }
 
-pub fn handle_get_service(address: Address) -> ZomeApiResult<Option<Entry>> {
-    hdk::get_entry(&address)
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
+pub struct ClientMetrics {
+    pub duration: Period,
+    // TODO: What other Client-side metrics can Chaperone collect?
+}
+
+pub fn handle_log_service(
+    agent_id: Agent,
+    response_commit: Address,
+    confirmation: Confirmation,
+    confirmation_signature: AgentSignature
+) -> ZomeApiResult<Address> {
+    let entry = Entry::App(
+        "service_log".into(),
+        ServiceLog { agent_id, response_commit, confirmation, confirmation_signature }.into()
+    );
+    let address = hdk::commit_entry(&entry)?;
+    Ok(address)
+}
+
+#[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
+pub struct ServiceLogMeta {
+    pub meta: CommitMeta,
+    pub service_log: ServiceLog,
+}
+
+pub fn handle_get_service(
+    address: Address
+) -> ZomeApiResult<ServiceLogMeta> {
+    let (meta,service_log) = get_meta_and_entry_as_type::<ServiceLog>(address)?;
+    Ok(ServiceLogMeta { meta, service_log })
 }
 
 fn _get_original_request(address: Address) -> ZomeApiResult<request::ClientRequest> {
     let log : ServiceLog = hdk::utils::get_as_type(address)?;
-    let response : response::HostResponse = hdk::utils::get_as_type(log.response_hash)?;
-    hdk::utils::get_as_type(response.request_hash)
+    let response : response::HostResponse = hdk::utils::get_as_type(log.response_commit)?;
+    hdk::utils::get_as_type(response.request_commit)
 }
 
 pub fn list_uninvoiced_servicelogs() -> Vec<Address> {
@@ -98,3 +145,47 @@ pub fn handle_list_uninvoiced_servicelogs() -> ZomeApiResult<Vec<Address>> {
     hdk::query("service_log".into(), last_log, 0)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ed25519_dalek;
+    use std::convert::{From, TryInto};
+
+    #[test]
+    fn client_service_smoke() {
+
+        // Get a legit request_hash signature, agent_id
+        let secret: [u8; 32] = [0_u8; 32];
+        let secret_key = ed25519_dalek::SecretKey::from_bytes( &secret ).unwrap();
+        let public_key = ed25519_dalek::PublicKey::from( &secret_key );
+        let secret_key_exp = ed25519_dalek::ExpandedSecretKey::from( &secret_key );
+        let agent_id =  Agent::from( &secret_key );
+
+        let service_log_str = format!(
+            r#"{{
+  "agent_id": "{}",
+  "response_commit": "Qmc8zvqELGCBCykoKnFuvLquCsSVNVBN3Lp2eEcJdHNakd",
+  "confirmation": {{
+    "response_hash": "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
+    "client_metrics": {{
+      "duration": "1.23s"
+    }}
+  }},
+  "confirmation_signature": "XxHr36xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxCg=="
+}}"#,
+            agent_id );
+        
+        let mut service_log: ServiceLog = serde_json::from_str(&service_log_str).unwrap();
+        assert_eq!( serde_json::to_string_pretty( &service_log ).unwrap(), service_log_str );
+
+        let signature = secret_key_exp.sign( serde_json::to_string( &service_log.confirmation ).unwrap().as_bytes(), &public_key );
+        service_log.confirmation_signature = AgentSignature::from_bytes( &signature.to_bytes() ).unwrap();
+        println!("ServiceLog 1 valid: {}", serde_json::to_string_pretty( &service_log ).unwrap());
+
+        service_log.response_commit = "QmU84Rqgs2bzBDYsp2too1oR2HYnrG5KxAMYBkcrPzjJ5w".into();
+        service_log.confirmation.response_hash = "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aXyzv".try_into().unwrap();
+        let signature = secret_key_exp.sign( serde_json::to_string( &service_log.confirmation ).unwrap().as_bytes(), &public_key );
+        service_log.confirmation_signature = AgentSignature::from_bytes( &signature.to_bytes() ).unwrap();
+        println!("ServiceLog 2 valid: {}", serde_json::to_string_pretty( &service_log ).unwrap());
+    }
+}    
