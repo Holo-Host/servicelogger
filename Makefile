@@ -1,27 +1,33 @@
-.PHONY: all
+# 
+# Test and build ServiceLogger Project
+# 
+# This Makefile is primarily instructional; you can simply enter the Nix environment for
+# holochain-rust development (supplied by holo=nixpkgs; see pkgs.nix) via `nix-shell` and run `hc
+# test` directly, or build a target directly (see default.nix), eg. `nix-build -A servicelogger`.
+#
+SHELL		= bash
+DNANAME		= servicelogger
+DNA		= dist/$(DNANAME).dna.json
 
 # External targets; Uses a nix-shell environment to obtain Holochain runtime, run tests
-
 .PHONY: all
 all: nix-test
 
-# nix-install, nix-test, nix-test-unit, ...
+# nix-test, nix-install, ...
+# 
+# Provides a nix-shell environment, and runs the desired Makefile target.  It is recommended that
+# you add `substituters = ...` and `trusted-public-keys = ...` to your nix.conf (see README.md), to
+# take advantage of cached Nix and Holo build assets.
 nix-%:
 	nix-shell --pure --run "make $*"
 
-# Internal targets; require a Nix environment in order to be deterministic.  Uses the version
-# of `hc` on the system PATH.
-# - Normally called from within a Nix environment, eg. run `nix-shell` from within hApp dir
-# - If you establish a Nix environment (eg. run `nix-shell` from within holochain-rust, to
-#   gain access to a certain development branch), then you can run these targets to build
-#   and test the 'Zome under that version of holochain-rust
+# Internal targets; require a Nix environment in order to be deterministic.
+# - Uses the version of `hc`, `holochain` on the system PATH.
+# - Normally called from within a Nix environment, eg. run `nix-shell`
 .PHONY:		rebuild build
-
 rebuild: 	clean build
 
 install: 	build
-
-DNA = dist/servicelogger.dna.json
 
 build:		$(DNA)
 
@@ -37,7 +43,6 @@ test: 		test-unit test-e2e
 
 test-unit:
 	RUST_BACKTRACE=1 cargo test \
-	    --manifest-path zomes/service/code/Cargo.toml \
 	    -- --nocapture
 
 # End-to-end test of DNA.  Runs a sim2h_server on localhost:9000; the default expected by `hc test`
@@ -61,7 +66,7 @@ clean:
 	    dist \
 	    test/node_modules \
 	    .cargo \
-	    target \
-	    zomes/service/code/target
+	    target
+
 
 

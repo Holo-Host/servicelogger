@@ -1,7 +1,4 @@
-.cargo
-dist/
-holochain-rust
+/dist
+/holochain-rust
 node_modules/
-result*
-target/
-*~
+/target
