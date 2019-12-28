@@ -70,3 +70,46 @@ clean:
 
 
 
+# Create a conductor configuration using an agent # (1, 2, ...) and a keystore-agent-#.key link (which must link to 
+# a filename ending in the public key, eg.
+#     $ ls -l keystore-agent-3.key
+#     lrwxrwxr-x  1 perry  staff  125 18 Apr 13:58 keystore-agent-3.key -> /Users/p.../keys/HcSCiGvvwq63Yyqa46H3C8OgioEkyt9ye3UF6J9PmINHuyrpUUh7Oisbfrr49da
+
+#$(MAKE) keystore-%.key conductor-0.out conductor.toml.master
+
+.PRECIOUS: conductor-%.toml
+conductor-%.toml: keystore-%.key
+	echo "Creating Holochain conductor config for Agent $*...";			\
+	AGENT=$*;									\
+	PUBKEY=$$( ls -l $< ); PUBKEY=$${PUBKEY##*/};					\
+	KEYFILE=$<;									\
+	WSPORT=$$(( 3000 + $* ));							\
+	SLUIPORT=$$(( 8800 + $* ));							\
+	HFUIPORT=$$(( 8300 + $* ));							\
+	HHUIPORT=$$(( 8400 + $* ));							\
+	S2HURI=wss://127.0.0.1:9000;							\
+	sed -e "s/PUBKEY/$$PUBKEY/g"							\
+	    -e "s/KEYFILE/$$KEYFILE/g"							\
+	    -e "s/WSPORT/$$WSPORT/g"							\
+	    -e "s/SLUIPORT/$$SLUIPORT/g"						\
+	    -e "s/HFUIPORT/$$HFUIPORT/g"						\
+	    -e "s/HHUIPORT/$$HHUIPORT/g"						\
+	    -e "s|IPCURI|$$IPCURI|g"							\
+	    -e "s|BSNODES|$$BSNODES|g"							\
+	    -e "s|AGENT|$$AGENT|g"							\
+	    < conductor.toml.master									\
+	    > $@;									\
+	echo "	Wrote new $@ (from conductor.toml.master and $<)"
+
+# If the target doesn't exist, create a new key. The last segment of the link.  Don't delete it, if
+# we do had to create one as an intermediate target.
+.PRECIOUS: keystore-%.key
+keystore-%.key:
+	@echo -n "Creating Holochain key for Agent $*...";				\
+	eval $$( hc keygen --nullpass --quiet						\
+	  | python -c "import sys;						\
+	      print('\n'.join('%s=%s' % ( k, v.strip() )			\
+		for (k, v) in zip(['KEY','KEYFILE'], sys.stdin.readlines())))"	\
+	);										\
+	echo " $@ -> $$KEYFILE";							\
+	ln -fs $$KEYFILE $@

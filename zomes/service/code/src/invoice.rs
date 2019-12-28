@@ -59,6 +59,11 @@ pub struct PaymentPref {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
+pub struct DNS {
+    pub dns_name: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct PaymentStatus {
     pub unpaid_value: f64,
     pub max_unpaid_value: f64,
@@ -175,21 +180,18 @@ pub fn get_payment_prefs() -> ZomeApiResult<PaymentPref> {
         None => return Err(ZomeApiError::Internal("DNA Bundle hash not configured!".to_string()))
     };
 
-    // hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge for {:?}", dna_bundle_hash))?;
-    let raw = hdk::call(
+    //hdk::debug(format!("********DEBUG******** BRIDGING ready to call hosting-bridge for {:?}", dna_bundle_hash))?;
+    let hosting_details_raw = hdk::call(
         "hosting-bridge",
         "host",
         Address::from(PUBLIC_TOKEN.to_string()),
         "get_service_log_details",
-        json!({
-            "app_hash": dna_bundle_hash,
-        }).into()
+        json!({ "app_hash": dna_bundle_hash }).into()
     )?;
-    // hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", raw))?;
-
-    let prefs : PaymentPref = raw.try_into()?;
-
-    Ok(prefs)
+    //hdk::debug(format!("********DEBUG******** BRIDGING RAW response from hosting-bridge {:?}", &hosting_details_raw))?;
+    let hosting_details: ZomeApiResult<PaymentPref> = hosting_details_raw.try_into()?;
+    
+    hosting_details
 }
 
 pub fn get_latest_invoice() -> Option<InvoicedLogs> {
@@ -214,17 +216,38 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Option<Address>> {
     // Check payment prefs via bridge to Hosting app, and see if needed to generate an invoice automatically
     let prefs = get_payment_prefs()?;
     // Gets uninvoiced logs
-    let logs_list = servicelog::list_uninvoiced_servicelogs();
+    let invoice = get_latest_invoice();
+    let last_log = invoice.map(|i| i.last_invoiced_log).unwrap_or(0);
+    let logs_list = servicelog::list_servicelogs_since(Some(last_log))?;
+
     // TODO: calculate real invoice price
     let outstanding_value = calculate_invoice_price(&logs_list);
+    //hdk::debug(format!("********DEBUG******** HAPP LOGS VALUE {} for {} logs {:?}",
+    //                   &outstanding_value, logs_list.len(), &logs_list))?;
 
     // If not enough outstanding value to generate an invoice, return None
     if outstanding_value < prefs.max_fuel_per_invoice {
         return Ok(None);
     }
 
-    // Otherwise generate the invoice
-    let holofuel_address_raw = hdk::call(
+    // Otherwise, get some details about the hApp for the HoloFuel Invoice notes
+    let happ_domains_raw = hdk::call(
+        "hosting-bridge",
+        "provider",
+        Address::from(PUBLIC_TOKEN.to_string()),
+        "get_app_domain_name",
+        json!({ "app_hash": prefs.dna_bundle_hash }).into(),
+    )?;
+    //hdk::debug(format!("********DEBUG******** HAPP DOMAIN RAW response from hosting-bridge {:?}", &happ_domains_raw))?;
+    let happ_domains: ZomeApiResult<Vec<DNS>> = happ_domains_raw.try_into()?;
+    let happ_domain = happ_domains?
+        .first()
+        .map(|d| d.dns_name.to_owned())
+        .unwrap_or(String::from("(unknown)"));
+
+    // generate the Holo Earnings "invoice"; a HoloFuel Request containing details of the hApp, and
+    // the service log records being billed.
+    let holofuel_request_raw = hdk::call(
         "holofuel-bridge",
         "transactions",
         Address::from(PUBLIC_TOKEN.to_string()),
@@ -232,16 +255,22 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Option<Address>> {
         json!({
             "from": prefs.provider_address,
             "amount": outstanding_value.to_string(),
-            "notes": "service log", // TODO: put some nice notes
+            "notes": json!({
+                "Holo_earnings": {
+                    "happ_hash": prefs.dna_bundle_hash,
+                    "happ_domain": happ_domain,
+                    "starting": last_log,
+                    "records": logs_list.len(),
+                }
+            }).to_string(),
             "deadline": Iso8601::from(0) // TODO: use some actual dealine
         }).into()
     )?;
 
-    // hdk::debug(format!("********DEBUG******** BRIDGING RAW response from fuel-bridge {:?}", holofuel_address_raw))?;
-
-    let holofuel_address : Address = holofuel_address_raw.try_into()?;
-
-    // hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}", holofuel_address))?;
+    //hdk::debug(format!("********DEBUG******** BRIDGING RAW response from fuel-bridge {:?}", &holofuel_request_raw))?;
+    let holofuel_request: ZomeApiResult<Address> = holofuel_request_raw.try_into()?;
+    //hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}", &holofuel_request))?;
+    let holofuel_address: Address = holofuel_request?;
 
     let entry = Entry::App("invoiced_logs".into(), InvoicedLogs{
             servicelog_list: logs_list,

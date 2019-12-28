@@ -128,21 +128,16 @@ fn _get_original_request(address: Address) -> ZomeApiResult<request::ClientReque
     hdk::utils::get_as_type(response.request_commit)
 }
 
-pub fn list_uninvoiced_servicelogs() -> Vec<Address> {
-    match handle_list_uninvoiced_servicelogs() {
-        Ok(results) => results,
-        _ => vec![],
-    }
+pub fn handle_list_uninvoiced_servicelogs() -> ZomeApiResult<Vec<Address>> {
+    list_servicelogs_since(
+        invoice::get_latest_invoice()
+            .map(|invoice| invoice.last_invoiced_log))
 }
 
-pub fn handle_list_uninvoiced_servicelogs() -> ZomeApiResult<Vec<Address>> {
-    // List all InvoicedLogs, then join the list of all servicelog_list inside them
-    let last_log = match invoice::get_latest_invoice() {
-        Some(invoice) => invoice.last_invoiced_log,
-        None => 0
-    };
-
-    hdk::query("service_log".into(), last_log, 0)
+pub fn list_servicelogs_since(
+    last_log: Option<usize>
+) -> ZomeApiResult<Vec<Address>> {
+    hdk::query("service_log".into(), last_log.unwrap_or(0), 0)
 }
 
 #[cfg(test)]

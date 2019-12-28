@@ -1,72 +1,16 @@
 const path = require('path')
 const sleep = require('sleep')
 
-// To use the nodejs_conductor specified in package.json:
-const { Config, Conductor, Scenario } = require('@holochain/holochain-nodejs');
-// To use a local copy of ../holochain-rust, (eg. on the `develop` branch), use:
-//const { Config, Conductor, Scenario } = require('../../holochain-rust/nodejs_conductor')
+const { bri } = require('./config')
+const util = require('./util')
 
-Scenario.setTape(require('tape'))
+sample = require('./sample')
 
-const dnaPath = path.join(__dirname, "../dist/servicelogger.dna.json")
-const dna = Config.dna(dnaPath, 'servicelogger')
-const agentApp = Config.agent("app")
-const appInstance = Config.instance(agentApp, dna)
-
-// ATTENTION! to test the Holofuel bridge you need to place a 'holofuel.dna.json' file into the /dist folder (created by packaging the holofuel app)
-// https://github.com/Holo-Host/holofuel/
-const fuelPath = path.join(__dirname, "../dist/holofuel.dna.json")
-const fuelDna = Config.dna(fuelPath, 'holofuel')
-const fuelApp = Config.agent("fuel")
-const fuelInstance = Config.instance(fuelApp, fuelDna)
-
-// ATTENTION! to test the Holohosting bridge you need to place a 'holohosting.dna.json' file into the /dist folder
-// https://github.com/Holo-Host/Holo-Hosting-App
-const hostPath = path.join(__dirname, "../dist/holohosting.dna.json")
-const hostDna = Config.dna(hostPath, 'holohost')
-const hostApp = Config.agent("host")
-const hostInstance = Config.instance(hostApp, hostDna)
-
-const hfBridge = Config.bridge('holofuel-bridge', appInstance, fuelInstance)
-const hhBridge = Config.bridge('hosting-bridge', appInstance, hostInstance)
-
-const debugLog = false
-const scenario = new Scenario([appInstance, hostInstance, fuelInstance], { bridges: [hfBridge, hhBridge], debugLog })
-
-const sample_request = {
-  agent_id: "QmUMwQthHNKSjoHpvxtxPPMA8qiMNytwBQEgVXHXjZvZRb",
-  zome_call_spec: "blog/create_post",
-  dna_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-  client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk",
-}
-
-const sample_response1 = {
-  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
-  hosting_stats: {
-    cpu_seconds: 3.2,
-    bytes_in: 12309,
-    bytes_out: 7352,
-  },
-  response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
-}
-
-const sample_response2 = {
-  request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
-  hosting_stats: {
-    cpu_seconds: 3.3,
-    bytes_in: 4332,
-    bytes_out: 7352,
-  },
-  response_data_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-  response_log: '64.242.88.10 - - [07/Mar/2004:16:11:58 -0800] "GET /twiki/bin/view/TWiki/WikiSyntax HTTP/1.1" 200 7352',
-  host_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1taKk"
-}
+module.exports = scenario => {
 
 const Provider_Doc = {
   provider_doc: {
-      kyc_proof: "DOC # QuarnnnnvltuenblergjasnvAfs"
+    kyc_proof: "DOC # QuarnnnnvltuenblergjasnvAfs"
   }
 }
 
@@ -84,84 +28,135 @@ const App_Config = {
   }
 }
 
-function perform_hosting_setup(host, fuel) {
+async function perform_hosting_setup(conductor, host, fuel) {
+  const test_name = "***DEBUG***: Holo Hosting Setup: "
+
   // Perform Holohost setup
-  host.call("provider", "register_as_provider", Provider_Doc);
+  const reg_pro = await conductor.callSync(host, "provider", "register_as_provider", Provider_Doc)
+  console.log(test_name+"Register as Provider: " + JSON.stringify( reg_pro, null, 4 ))
 
   // sleep to wait for link propagation
-  sleep.sleep(5);
-  // Add the holofuel account to the Provider
-  host.call("provider", "add_holofuel_account", {"holofuel_account_details":{"account_number" : fuel.agentId}});
+  //sleep.sleep(5);
 
-  const app_address = host.call("provider", "register_app", App_Config).Ok;
-  // console.log("APP ADDRESS:: ", app_address);
+  // Add the holofuel account to the Provider
+  const fuel_account = {
+    holofuel_account_details: {
+      account_number : conductor.info(fuel).agentAddress
+    }
+  }
+  const add_fuel = await conductor.callSync(host, "provider", "add_holofuel_account", fuel_account);
+  console.log(test_name+"Provider Holofuel Account w/: " + JSON.stringify( fuel_account, null, 4 ) + " ==> " + JSON.stringify( add_fuel, null, 4 ))
+
+
+  const app_address = await conductor.callSync(host, "provider", "register_app", App_Config);
+  console.log(test_name+"APP ADDRESS:: " +JSON.stringify( app_address ));
 
   const payment_prefs = {
-    app_hash: app_address,
+    app_hash: app_address.Ok,
     max_fuel_per_invoice: 2.0,
     max_unpaid_value: 4.0,
     price_per_unit: 1.0
   }
 
   // sleep to wait for link propagation
-  sleep.sleep(5);
+  //sleep.sleep(5);
 
-  host.call("host", "add_service_log_details", payment_prefs);
-  sleep.sleep(5);
-  return app_address;
+  const service_log_details = await conductor.callSync(host, "host", "add_service_log_details", payment_prefs);
+  console.log(test_name+"Service Log Details: " +JSON.stringify( service_log_details ));
+  //sleep(5)
+
+  return app_address.Ok;
 }
 
 // 5. Generate an invoice based on the selected ServiceLogs
-scenario.runTape('testing invoice generation', async (t, { app, host, fuel }) => {
+scenario('testing invoice generation', async (s, t) => {
+  const { conductor } = await s.players( { conductor: bri('app') }, true )
+  const test_name = "***DEBUG***: Multi-DNA Invoice Generation: "
+  
+  let serv = 'serv'
+  let fuel = 'fuel'
+  let host = 'host'
 
-  const happ_address = await perform_hosting_setup(host, fuel);
+  for ( let agent_name of [ serv, fuel, host ]) {
+    let agent_id = conductor.info( agent_name ).agentAddress
+    console.log(test_name+`Agent ID of ${agent_name}: ${agent_id}`)
+  }
+  const happ_address = await perform_hosting_setup(conductor, host, fuel);
+  t.ok( happ_address )
+
+  s.consistency()
 
   const setup_prefs = {
     dna_bundle_hash: happ_address,
   }
 
   // performs initial setup
-  app.call("service", "setup", {"entry": setup_prefs})
+  const serv_setup = await conductor.callSync(serv, "service", "setup", {"entry": setup_prefs})
+  console.log(test_name+"Service Log setup: " +JSON.stringify( serv_setup ));
 
-  // Logs a sample request
-  app.call("service", "log_request", {"entry": sample_request})
+  // Log a first request, response & service
+  const requ1 = await conductor.callSync(serv, "service", "log_request", sample.request1)
+  t.ok( requ1.Ok )
+  const addr1 = await conductor.callSync(serv, "service", "log_response", {
+    ...sample.response1,
+    request_commit: requ1.Ok,
+  })
+  t.ok( addr1.Ok )
 
-  // Log a first response & service_log
-  const addr1 = app.call("service", "log_response", {"entry": sample_response1})
-  const service_log1 = {
-    response_hash: addr1.Ok,
-    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
-  }
-  app.call("service", "log_service", {"entry": service_log1})
+  var serv_log_svc = await conductor.callSync(serv, "service", "log_service", {
+    ...sample.service1,
+    response_commit: addr1.Ok,
+  })
+  console.log(test_name+"Service Log service: " +JSON.stringify( serv_log_svc ));
+  t.ok( serv_log_svc.Ok )
 
   // Check if an invoice should be generated (passed threshold)
-  app.call("service", "generate_invoice", {})
+  const serv_gen_inv = await conductor.callSync(serv, "service", "generate_invoice", {})
+  console.log(test_name+"Service Generate Invoice: " +JSON.stringify( serv_gen_inv ));
 
   // No invoice should have been generated yet
-  invoices = app.call("service", "list_unpaid_invoices", {})
+  var invoices = await conductor.callSync(serv, "service", "list_unpaid_invoices", {})
   t.deepEqual(invoices, { Ok: [] })
 
-  // Check we have no invoice yet
-  var invoices = app.call("service", "list_unpaid_invoices", {})
-  t.deepEqual(invoices, { Ok: [] })
-
-  // Log a second response & service_log
-  const addr2 = app.call("service", "log_response", {"entry" : sample_response2})
-  const service_log2 = {
-    response_hash: addr2.Ok,
-    client_signature: "QmXsSgDu7NNdAq7F9rmmHSaRz79a8njtkaYgRqxzz1tZKk"
-  }
-  app.call("service", "log_service", {"entry": service_log1})
+  // Log a second request, response & service
+  const requ2 = await conductor.callSync(serv, "service", "log_request", sample.request2)
+  t.ok( requ2.Ok )
+  const addr2 = await conductor.callSync(serv, "service", "log_response", {
+    ...sample.response2,
+    request_commit: requ2.Ok,
+  })
+  t.ok( addr2.Ok )
+  serv_log_svc = await conductor.callSync(serv, "service", "log_service", {
+    ...sample.service2,
+    response_commit: addr2.Ok,
+  })
+  console.log(test_name+"Service Log service: " +JSON.stringify( serv_log_svc ));
+  t.ok( serv_log_svc.Ok )
 
   // Check if an invoice should be generated (passed threshold)
-  invoice = await app.callSync("service", "generate_invoice", {})
-  t.deepEqual(invoice, { Ok: 'QmP8GBjQi1Ehm8wsXfkv66oarDAd1xFVBF7TVgzyKjfACB' })
+  var invoice = await conductor.callSync(serv, "service", "generate_invoice", {})
+  t.deepEqual(invoice, { Ok: 'QmSuEKvY4ccGFAdkBnEdXo2mGy1fEc7DGi9D1gXh4JJy3q' })
 
   // Now we should have an invoice
-  invoices = app.call("service", "list_unpaid_invoices", {})
-  t.deepEqual(invoices, { Ok: ['QmP8GBjQi1Ehm8wsXfkv66oarDAd1xFVBF7TVgzyKjfACB'] })
+  invoices = await conductor.callSync(serv, "service", "list_unpaid_invoices", {})
+  t.deepEqual(invoices, { Ok: [ 'QmSuEKvY4ccGFAdkBnEdXo2mGy1fEc7DGi9D1gXh4JJy3q' ] })
+
+  // Check that the Invoice notes indicate the source and details of the invoice,
+  const earnings = await conductor.callSync(fuel, "transactions", "list_transactions", {
+    filters: {
+      earnings: {
+	Notes: "\"Holo_earnings\":.*"
+      }
+    }
+  })
+  console.log( test_name + `Holo Earning tx list: ` + JSON.stringify( earnings, null, 2 ))
+  const notes_json = JSON.parse( util.get( [ 'Ok', 'transactions', 0, 'event', 'Request', 'notes' ], earnings ))
+  t.isEqual( util.get( [ 'Holo_earnings', 'happ_domain' ], notes_json ), "app2.holo.host" )
+  t.isEqual( util.get( [ 'Holo_earnings', 'records' ], notes_json ), 2 )
+
 })
 
+/*
 const sample_response3 = {
   request_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
   hosting_stats: {
@@ -254,4 +249,6 @@ scenario.runTape('testing payment status', async (t, { app, host, fuel }) => {
 
 })
 
+*/
 
+}

@@ -7,6 +7,13 @@
       "reference": {
         "traits": {}
       }
+    },
+    {
+      "presence": "optional",
+      "handle": "hosting-bridge",
+      "reference": {
+        "traits": {}
+      }
     }
   ]
 }

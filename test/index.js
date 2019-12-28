@@ -5,7 +5,7 @@
 /*
  * Try-o-rama
  */
-const { Orchestrator, tapeExecutor, Config, singleConductor, combine, callSync, localOnly } = require('@holochain/tryorama')
+const { Orchestrator, tapeExecutor, singleConductor, localOnly, combine, callSync } = require('@holochain/tryorama')
 
 const MIN_EXPECTED_SCENARIOS = 1
 
@@ -15,29 +15,37 @@ process.on('unhandledRejection', error => {
 });
 
 
-let transport_config = 'memory';
-let middleware = combine(
-  // by default, combine conductors into a single conductor for in-memory networking
-  // NB: this middleware makes a really huge difference! and it's not very well tested,
-  // as of Oct 1 2019. So, keep an eye out.
-  tapeExecutor(require('tape')),
-  localOnly,
-  callSync
-);
+const networkType = process.env.APP_SPEC_NETWORK_TYPE || 'sim2h'
+const middleware = 
+  ( networkType === 'websocket'
+  ? combine(tapeExecutor(require('tape')), localOnly, callSync)
 
+  : networkType === 'sim1h'
+  ? combine(tapeExecutor(require('tape')), localOnly, callSync)
+
+  : networkType === 'sim2h'
+  ? combine(tapeExecutor(require('tape')), localOnly, callSync)
+
+  : networkType === 'memory'
+  ? combine(tapeExecutor(require('tape')), localOnly, singleConductor, callSync)
+
+  : (() => {throw new Error(`Unsupported memory type: ${networkType}`)})()
+)
 
 const orchestrator = new Orchestrator({
-    middleware,
-    waiter: {
-	softTimeout: 5000,
-	hardTimeout: 10000,
-    }
+  middleware,
+  waiter: {
+    softTimeout: 10000,
+    hardTimeout: 20000
+  }
 })
+
 
 // Run the various scenerio test packages
 
 require('./basic')(orchestrator.registerScenario)
 
+require('./bridging')(orchestrator.registerScenario)
 
 // Check to see that we haven't accidentally disabled a bunch of scenarios
 const num = orchestrator.numRegistered()

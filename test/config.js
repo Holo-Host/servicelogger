@@ -1,11 +1,15 @@
 const path = require('path')
 const { Config } = require('@holochain/tryorama')
 
-const dnaName = "servicelogger"
-const dnaId = "service"
+const dnaLoad = (dnaName, dnaId) => {
+    const dnaPath = path.join(__dirname, `../dist/${dnaName}.dna.json`)
+    const dna = Config.dna(dnaPath, dnaId)
+    return [dnaName, dnaId, dnaPath, dna]
+}
 
-const dnaPath = path.join(__dirname, `../dist/${dnaName}.dna.json`)
-const dna = Config.dna(dnaPath, dnaId)
+let [dnaServName, dnaServId, dnaServPath, dnaServ] = dnaLoad( "servicelogger", "service" )
+let [dnaFuelName, dnaFuelId, dnaFuelPath, dnaFuel] = dnaLoad( "holofuel", "transactions" )
+let [dnaHostName, dnaHostId, dnaHostPath, dnaHost] = dnaLoad( "holo-hosting-app", "hosting" )
 
 
 const networkType = process.env.APP_SPEC_NETWORK_TYPE || "sim2h"
@@ -81,20 +85,81 @@ const logger = {
 const commonConfig = { logger, network }
 
 module.exports = {
-    one: (agent) => Config.gen([{
-	id: 'app',
-	agent: {
-	    id: agent,
-	    name: `${agent}`,
-	    test_agent: true,
-	    public_address: "",
-	    keystore_file: ""
-	},
-	dna: {
-	    id: dnaId,
-	    file: dnaPath,
-	}
-    }],
-    commonConfig
-  ),
+  one: (agent) => Config.gen([{
+    id: 'app',
+    agent: {
+      id: agent,
+      name: `${agent}`,
+      test_agent: true,
+      public_address: "",
+      keystore_file: ""
+    },
+    dna: {
+      id: dnaServId,
+      file: dnaServPath,
+    }
+  }], commonConfig ),
+
+  bri: (agent) => {
+    console.log(`bri( ${agent} )`)
+    return Config.gen([{
+      id: 'serv',
+      agent: {
+	id: agent,
+	name: `${agent}`,
+	test_agent: true,
+	public_address: "",
+	keystore_file: ""
+      },
+      dna: {
+	id: dnaServId,
+	file: dnaServPath,
+      }
+    }, {
+      id: 'fuel',
+      agent: {
+	id: agent,
+	name: `${agent}`,
+	test_agent: true,
+	public_address: "",
+	keystore_file: ""
+      },
+      dna: {
+	id: dnaFuelId,
+	file: dnaFuelPath,
+      }
+    }, {
+      id: 'host',
+      agent: {
+	id: agent,
+	name: `${agent}`,
+	test_agent: true,
+	public_address: "",
+	keystore_file: ""
+      },
+      dna: {
+	id: dnaHostId,
+	file: dnaHostPath,
+      }
+    }], {
+      bridges: [
+	Config.bridge('holofuel-bridge', 'serv', 'fuel'),
+	Config.bridge('hosting-bridge',  'serv', 'host')
+      ],
+      ...commonConfig
+    })
+  },
+  /*
+    bri: Config.gen({
+	serv: dnaServ,
+	fuel: dnaFuel,
+	host: dnaHost
+    }, {
+	bridges: [
+	    Config.bridge('holofuel-bridge', 'serv', 'fuel'),
+	    Config.bridge('hosting-bridge',  'serv', 'host')
+	],
+	...commonConfig
+    }),
+  */
 }

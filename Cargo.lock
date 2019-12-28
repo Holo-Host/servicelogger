@@ -1102,7 +1102,7 @@ dependencies = [
 
 [[package]]
 name = "service"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "base64 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "ed25519-dalek 1.0.0-pre.2 (registry+https://github.com/rust-lang/crates.io-index)",

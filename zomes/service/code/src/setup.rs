@@ -20,8 +20,7 @@ use hdk::{
         validation::EntryValidationData
     },
 };
-// use serde::Serialize;
-use serde_json::{self};
+use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct SetupPrefs {
@@ -49,21 +48,18 @@ pub fn handle_setup(entry: SetupPrefs) -> ZomeApiResult<Address> {
     Ok(address)
 }
 
+/// Get the last configured SetupPrefs, if any
 pub fn get_latest_prefs() -> Option<SetupPrefs> {
-    // Search the local chain for all setup_prefs
-    let prefs_list: Vec<Entry> = match hdk::query("setup_prefs".into(), 0, 0) {
-        Ok(results) => results,
-        _ => vec![],
-    }.iter().map(|address| {
-        hdk::get_entry(&address).unwrap().unwrap()
-    }).collect();
-
-    prefs_list.last()
-    .map(|entry| {
-        let json = match entry {
-            Entry::App(_, entry_value) => entry_value.into(),
-            _ => "null".into()
-        };
-        serde_json::from_str(json).unwrap()
-    })
+    if let Ok(prefs) = hdk::query("setup_prefs".into(), 0, 0) {
+        if let Some(address) = prefs.last() {
+            if let Ok(Some(entry)) = hdk::get_entry(&address) {
+                if let Entry::App(_, entry_value) = entry {
+                    if let Ok(value) = SetupPrefs::try_from(entry_value.to_owned()) {
+                        return Some(value)
+                    }
+                }
+            }
+        }
+    }
+    None
 }
