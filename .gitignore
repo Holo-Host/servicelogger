@@ -2,3 +2,5 @@
 /holochain-rust
 node_modules/
 /target
+/result
+*.log
