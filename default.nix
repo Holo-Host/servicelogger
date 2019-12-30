@@ -1,4 +1,4 @@
-{ pkgs ? import ./pkgs.nix {} }:
+{ pkgs ? import ./pkgs.nix {}, shell ? false }:
 
 with pkgs;
 
@@ -8,6 +8,8 @@ in
 
 {
   servicelogger = buildDNA {
+    inherit shell;
+
     name = "servicelogger";
     src = gitignoreSource ./.;
 

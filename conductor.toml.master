@@ -130,9 +130,10 @@ port = HHUIPORT
 dna_interface = "websocket-interface"
 
 [network]
-type = "sim2h";
-#sim2h_url = "wss://sim2h.holochain.org:9000";
-sim2h_url = "wss://127.0.0.1:9000";
+type = "sim2h"
+#sim2h_url = "wss://sim2h.holochain.org:9000"
+#sim2h_url = "wss://127.0.0.1:9000"
+sim2h_url = "S2HURI"
 
 # -----------  Networking  -----------
 # [network]

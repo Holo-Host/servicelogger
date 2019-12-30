@@ -1,5 +1,6 @@
 const { one } = require('./config')
 const util = require('./util')
+const sample = require('./sample')
 const json_stable_stringify = require('json-stable-stringify')
 
 module.exports = scenario => {
@@ -18,89 +19,6 @@ const setup_prefs = {
 
 // TODO: these are constructed w/ a host_id that *matches* the default one generated for Sim2h Scenario tests,
 // because hdk::sign doesn't allow signing of arbitrary JSON-serialized data (ie. w/ escapes).
-const sample_request1 = {
-  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  "request": {
-    "timestamp": "2019-11-25T05:48:34.123+07:00",
-    "host_id": "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz",
-    "call_spec": {
-      "hha_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
-      "dna_alias": "openbook",
-      "zome": "blog",
-      "function": "create_post",
-      "args_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51"
-    }
-  },
-  "request_signature": "eILE1NJsxw2ANRpKzKV1r9J6pJDJlTnDtWKoAWOuR6h5FydqgGIexqucNi/yZLHmRT7OFFdR4dangGQjk86OAA=="
-}
-
-const sample_request2 = {
-  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  "request": {
-    "timestamp": "2019-11-25T05:48:34.123+07:00",
-    "host_id": "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz",
-    "call_spec": {
-      "hha_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
-      "dna_alias": "openbook",
-      "zome": "blog",
-      "function": "create_post",
-      "args_hash": "QmfZy5bvk7a3DQAjCbGNtmrPXWkyVvPrdnZMyBZ5q5ieKG"
-    }
-  },
-  "request_signature": "aaHZg6qaeRhbiYoJCN9oN3vxJIsuVigQxH2OTDWvfVHRk7QbRBHT+Ay0k50q94VKGRe1J+lq1YRhK1l5BgarAg=="
-}
-
-const host_metrics = {
-    duration: "3.2s",
-    /*
-     * These are only meaningfully collectible on a per-invoice period.
-     *
-    cpu: { elapsed: "3.2s", system: "600ms", user: "1.2s", load: 1.8 },
-    network: { i: 12309, o: 7352 },
-    storage: 4603
-     *
-     */
-};
-
-
-    
-const sample_response1 = {
-    request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1x4",
-    response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-    host_metrics,
-    entries: []
-}
-
-const sample_response2 = {
-    request_commit: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aStuv",
-    response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aXyzv",
-    host_metrics,
-    entries: []
-}
-
-const sample_service1 = {
-  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  "response_commit": "Qmc8zvqELGCBCykoKnFuvLquCsSVNVBN3Lp2eEcJdHNakd",
-  "confirmation": {
-    "response_hash": "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-    "client_metrics": {
-      "duration": "1.23s"
-    }
-  },
-  "confirmation_signature": "IrXZ4MRuaIMeN6NtaobSPahlTfQqL+ykLdNUT91tie1qAqT4DC/WXEq1yskwSIKJbg9Qkd1UqVhfOXmXhihCAQ=="
-}
-
-const sample_service2 = {
-  "agent_id": "HcSCIp5KE88N7OwefwsKhKgRfJyr465fgikyphqCIpudwrcivgfWuxSju9mecor",
-  "response_commit": "QmU84Rqgs2bzBDYsp2too1oR2HYnrG5KxAMYBkcrPzjJ5w",
-  "confirmation": {
-    "response_hash": "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aXyzv",
-    "client_metrics": {
-      "duration": "1.23s"
-    }
-  },
-  "confirmation_signature": "RYpDOlbmNJKSiK/9c5OF2yEum7QCJqiOdP5XxorD/nGggEvCXRva4yZXgYoDXiPS0hAz+ak42HMeuicbQ2CeDw=="
-}
 
 // 1. The client starts a new request for hosting, based on a call from the HC Interceptor
 scenario('can log a client request', async (s, t) => {
@@ -124,18 +42,18 @@ scenario('can log a client request', async (s, t) => {
   //t.ok(test2.Ok) // TODO: should succeed
 
     var signature1 = await app.call('app', "service", "sign", {
-	payload: json_stable_stringify( sample_request1.request )
+	payload: json_stable_stringify( sample.request1.request )
     })
     console.log(`***DEBUG***: signature1 == ` + JSON.stringify( signature1 ));
   //t.ok(signature1.Ok) // TODO: should succeed
     var request1 = {
-	...sample_request1,
+	...sample.request1,
 	request_signature: signature1.Ok
     }
     // Use the request with the computed signature
   //const addr = await app.call('app', "service", "log_request", request1)
 
-    const addr = await app.call('app', "service", "log_request", sample_request1)
+    const addr = await app.call('app', "service", "log_request", sample.request1)
 
     t.deepEqual(addr, { Ok: 'QmeQbPutRefwE7SRwZrgCZguj5Zn9zYNZiNEZb5Sdb671a' })
 
@@ -144,18 +62,18 @@ scenario('can log a client request', async (s, t) => {
 
     t.deepEqual( util.get( ['Ok', 'meta', 'address'], result ), addr.Ok )
     t.deepEqual( util.get( ['Ok', 'client_request', 'request', 'call_spec', 'args_hash'], result ),
-		 sample_request1.request.call_spec.args_hash )
+		 sample.request1.request.call_spec.args_hash )
 
 
     // Ensure that host_id and signature validation occurs.
     let request1_bad_host = {
-	agent_id: sample_request1.agent_id,
+	agent_id: sample.request1.agent_id,
 	request: {
-	    timestamp: sample_request1.request.timestamp,
-	    host_id: sample_request1.agent_id, // valid, but not correct
-	    call_spec: sample_request1.request.call_spec
+	    timestamp: sample.request1.request.timestamp,
+	    host_id: sample.request1.agent_id, // valid, but not correct
+	    call_spec: sample.request1.request.call_spec
 	},
-	request_signature: sample_request1.request_signature
+	request_signature: sample.request1.request_signature
     }
     const host_fail = await app.call('app', "service", "log_request", request1_bad_host )
     console.log("***DEBUG***: sig_fail == " + JSON.stringify( host_fail ))
@@ -165,7 +83,7 @@ scenario('can log a client request', async (s, t) => {
 	 "should generate an 'Host Agent ... doesn't match: " + JSON.stringify( host_fail ))
 
     let request1_bad_sig = {
-	...sample_request1,
+	...sample.request1,
 	request_signature: "XxHr36xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxCg=="
     }
     const sig_fail = await app.call('app', "service", "log_request", request1_bad_sig )
@@ -184,13 +102,13 @@ scenario('can log a host response', async (s, t) => {
     // performs initial setup
     await app.call('app', "service", "setup", {"entry": setup_prefs})
 
-    const request_addr = await app.call('app', "service", "log_request", sample_request1)
+    const request_addr = await app.call('app', "service", "log_request", sample.request1)
 
     // try to log a response with a bad request_commit
     const bad_response = {
 	request_commit: "xxxxxxx-fake-address-xxxxxxx",
 	response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-	host_metrics,
+        host_metrics: sample.host_metrics,
 	entries: []
     }
     const rsp_fail = await app.call('app', "service", "log_response", bad_response)
@@ -204,7 +122,7 @@ scenario('can log a host response', async (s, t) => {
     const response = {
 	request_commit: request_addr.Ok,
 	response_hash: "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
-	host_metrics,
+        host_metrics: sample.host_metrics,
 	entries: []
     }
     const addr = await app.call('app', "service", "log_response", response)
@@ -224,10 +142,10 @@ scenario('can create a servicelog', async (s, t) => {
     await app.call('app', "service", "setup", {"entry": setup_prefs})  
 
     // Logs a sample request
-    const req = await app.call('app', "service", "log_request", sample_request1)
+    const req = await app.call('app', "service", "log_request", sample.request1)
 
     const addr = await app.call('app', "service", "log_response", {
-	...sample_response1,
+	...sample.response1,
 	request_commit: req.Ok
     })
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
@@ -235,7 +153,7 @@ scenario('can create a servicelog', async (s, t) => {
 
     // try to log a bad service_log 
     const bad_service_log = {
-	...sample_service1,
+	...sample.service1,
 	response_commit: 'QmfaKeADDresStVHEWr4fcQvwCHsfzANYAgPiorBwYKYAq',
     }
     const failure = await app.call('app', "service", "log_service", bad_service_log)
@@ -243,7 +161,7 @@ scenario('can create a servicelog', async (s, t) => {
     t.ok(failure.Err.Internal.includes("HostResponse entry not found!"), "should generate an error")
 
     // then log an actual service_log
-    const addr2 = await app.call('app', "service", "log_service", sample_service1)
+    const addr2 = await app.call('app', "service", "log_service", sample.service1)
     console.log("***DEBUG***: log_service: "+JSON.stringify( addr2 ))
 
     const result = await app.call('app', "service", "get_service", {"address": addr2.Ok})
@@ -261,24 +179,24 @@ scenario('log then list all servicelog', async (s, t) => {
     await app.call('app', "service", "setup", {"entry": setup_prefs})  
 
     // Logs a sample request
-    const req1 = await app.call('app', "service", "log_request", sample_request1)
+    const req1 = await app.call('app', "service", "log_request", sample.request1)
     console.log("***DEBUG***: log_request 1: "+JSON.stringify( req1 ))
 
     // Log a first response & service_log
     const addr1 = await app.call('app', "service", "log_response", {
-	...sample_response1,
+	...sample.response1,
 	request_commit: req1.Ok
     })
     console.log("***DEBUG***: log_response 1: "+JSON.stringify( addr1 ))
 
-    const sl_addr1 = await app.call('app', "service", "log_service", sample_service1)
+    const sl_addr1 = await app.call('app', "service", "log_service", sample.service1)
 
     console.log("***DEBUG***: log_service 1: "+JSON.stringify( sl_addr1 ))
 
     // Log a second response & service_log
-    const req2 = await app.call('app', "service", "log_request", sample_request2)
+    const req2 = await app.call('app', "service", "log_request", sample.request2)
     const addr2 = await app.call('app', "service", "log_response", {
-	...sample_response2,
+	...sample.response2,
 	request_commit: req2.Ok
     })
     console.log("***DEBUG***: log_response 2: "+JSON.stringify( addr2 ))
@@ -286,7 +204,7 @@ scenario('log then list all servicelog', async (s, t) => {
 	response_commit: addr2.Ok,
 	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
-    const sl_addr2 = await app.call('app', "service", "log_service", sample_service2 )
+    const sl_addr2 = await app.call('app', "service", "log_service", sample.service2 )
     console.log("***DEBUG***: log_service 2: "+JSON.stringify( sl_addr2 ))
 
     const results = await app.call('app', "service", "list_uninvoiced_servicelogs", {})
