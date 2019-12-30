@@ -1,5 +1,4 @@
 const path = require('path')
-const sleep = require('sleep')
 
 const { bri } = require('./config')
 const util = require('./util')
@@ -35,9 +34,6 @@ async function perform_hosting_setup(conductor, host, fuel) {
   const reg_pro = await conductor.callSync(host, "provider", "register_as_provider", Provider_Doc)
   console.log(test_name+"Register as Provider: " + JSON.stringify( reg_pro, null, 4 ))
 
-  // sleep to wait for link propagation
-  //sleep.sleep(5);
-
   // Add the holofuel account to the Provider
   const fuel_account = {
     holofuel_account_details: {
@@ -58,12 +54,8 @@ async function perform_hosting_setup(conductor, host, fuel) {
     price_per_unit: 1.0
   }
 
-  // sleep to wait for link propagation
-  //sleep.sleep(5);
-
   const service_log_details = await conductor.callSync(host, "host", "add_service_log_details", payment_prefs);
   console.log(test_name+"Service Log Details: " +JSON.stringify( service_log_details ));
-  //sleep(5)
 
   return app_address.Ok;
 }

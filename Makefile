@@ -45,19 +45,38 @@ test-unit:
 	RUST_BACKTRACE=1 cargo test \
 	    -- --nocapture
 
+# Ensure all DNAs are available.  If a nix-shell environment is used, then `shell.nix` may
+# define additional DNAs required; paths to these should be available in the $buildInputs
+# environment variable, eg.:
+# 
+#    /nix/store/r5n15mv3zkh158wz4q06dprlw6six1hn-holofuel
+# 
+# Otherwise, copy/link to the desired .dna.json files into dist/.
+test-dnas:	$(DNA) \
+		dist/holofuel.dna.json \
+		dist/holo-hosting-app.dna.json
+
+dist/%.dna.json:
+	@for p in $$buildInputs; do \
+	    if [[ "$${p#*-}" == "$*" ]]; then \
+		echo "Linking $${p} to $@"; \
+		ln -fs $${p}/$*.dna.json $@; \
+	    fi \
+	done \
+
 # End-to-end test of DNA.  Runs a sim2h_server on localhost:9000; the default expected by `hc test`
-test-e2e:	$(DNA) test-sim2h test-node
+test-e2e:	test-dnas test-sim2h test-node test-dnas
 	@echo "Starting Scenario tests..."; \
 	    RUST_BACKTRACE=1 hc test \
-	        | test/node_modules/faucet/bin/cmd.js
+	        | node test/node_modules/faucet/bin/cmd.js
 
 test-node:
 	@echo "Setting up Scenario/Stress test Javascript..."; \
-	    cd test && npm install
+	    cd test && [ -d node_modules ] || npm install
 
 test-sim2h:
 	@echo "Starting sim2h_server on localhost:9000 (may already be running)..."; \
-	    sim2h_server -p 9000 &
+	    sim2h_server -p 9000 >sim2h_server.log 2>&1 &
 
 # Generic targets; does not require a Nix environment
 .PHONY: clean
