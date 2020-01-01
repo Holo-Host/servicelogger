@@ -38,7 +38,7 @@ build:		$(DNA)
 $(DNA):
 	hc package
 
-.PHONY: test test-unit test-e2e test-stress test-sim2h test-node
+.PHONY: test test-unit test-e2e test-dna test-stress test-sim2h test-node
 test: 		test-unit test-e2e
 
 test-unit:
@@ -52,7 +52,7 @@ test-unit:
 #    /nix/store/r5n15mv3zkh158wz4q06dprlw6six1hn-holofuel
 # 
 # Otherwise, copy/link to the desired .dna.json files into dist/.
-test-dnas:	$(DNA) \
+test-dna:	$(DNA) \
 		dist/holofuel.dna.json \
 		dist/holo-hosting-app.dna.json
 
@@ -65,7 +65,7 @@ dist/%.dna.json:
 	done \
 
 # End-to-end test of DNA.  Runs a sim2h_server on localhost:9000; the default expected by `hc test`
-test-e2e:	test-dnas test-sim2h test-node test-dnas
+test-e2e:	test-dna test-sim2h test-node
 	@echo "Starting Scenario tests..."; \
 	    RUST_BACKTRACE=1 hc test \
 	        | node test/node_modules/faucet/bin/cmd.js
