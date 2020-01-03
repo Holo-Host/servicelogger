@@ -17,13 +17,15 @@
       "arguments": [
         "-Oz",
         "--vacuum",
-        "../../../target/wasm32-unknown-unknown/release/service.wasm"
+        "../../../target/wasm32-unknown-unknown/release/service.wasm",
+        "-o",
+        "../../../target/wasm32-unknown-unknown/release/service.wasm.opt"
       ]
     },
     {
       "command": "wasm2wat",
       "arguments": [
-        "../../../target/wasm32-unknown-unknown/release/service.wasm",
+        "../../../target/wasm32-unknown-unknown/release/service.wasm.opt",
         "-o",
         "../../../target/wasm32-unknown-unknown/release/service.wat"
       ]
