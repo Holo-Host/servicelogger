@@ -347,3 +347,43 @@ pub fn get_meta_and_entry_as_type<R: TryFrom<AppEntryValue>>(
         "No entry at address {}", address
     ).into())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ed25519_dalek;
+    use crate::request::RequestPayload;
+
+    #[test]
+    fn client_validate_smoke() {
+        let request_json = r#"{
+          "timestamp": "2020-02-12T21:05:32.021+00:00",
+          "host_id": "HcScjNSwOesm8iygytJfakbdm9cv879nkDGFXtCg8or6mv969c8Hj5QKUzUiikz",
+          "call_spec": {
+            "hha_hash": "QmUgZ8e6xE1h9fH89CNqAXFQkkKyRh2Ag6jgTNC8wcoNYS",
+            "dna_alias": "holofuel",
+            "zome": "transactions",
+            "function": "ledger_state",
+            "args_hash": "QmSvPd3sHK7iWgZuW47fyLy4CaZQe2DwxvRhrJ39VpBVMK"
+          }
+        }"#;
+        let sig_bytes = base64::decode("wpfc6gPuQ6Z33Y9kEuDpN3+ZTmtQznV+rp5um1VJhc9spMRuXxyUH/Ty91ildDuw/9+N2YMN6CvJhgPFhuomBw==").unwrap();
+        //println!("{:?}", sig_bytes);
+
+        let request_pack: RequestPayload = serde_json::from_str(&request_json).unwrap();
+        //println!("{:?}", request_pack);
+
+        let agent_id = AGENT_CODEC.decode("HcSCjUNP6TtxqfdmgeIm3gqhVn7UhvidaAVjyDvNn6km5o3qkJqk9P8nkC9j78i").unwrap();
+        //println!("{:?}", agent_id);
+
+        let agent_key = ed25519_dalek::PublicKey::from_bytes( &agent_id ).unwrap();
+        //println!("{:?}", agent_key);
+
+        let verified = agent_key.verify(
+            serde_json::to_string( &request_pack ).unwrap().as_bytes(),
+            &ed25519_dalek::Signature::from_bytes( &sig_bytes ).unwrap()
+        );
+        //println!("{:?}", verified);
+        assert_eq!( verified, Ok(()) );
+    }
+}
