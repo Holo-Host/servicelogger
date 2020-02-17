@@ -55,7 +55,7 @@ scenario('can log a client request', async (s, t) => {
 
     const addr = await app.call('app', "service", "log_request", sample.request1)
 
-    t.deepEqual(addr, { Ok: 'QmeQbPutRefwE7SRwZrgCZguj5Zn9zYNZiNEZb5Sdb671a' })
+    t.deepEqual(addr, { Ok: 'QmaYjjLKWfr8QTbwx79q55NXxrsfk1HV2CKhPuhjrYyVJa' })
 
     const result = await app.call('app', "service", "get_request", {"address": addr.Ok})
     console.log("***DEBUG***: get_request == " + JSON.stringify( result ));
@@ -149,7 +149,7 @@ scenario('can create a servicelog', async (s, t) => {
 	request_commit: req.Ok
     })
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
-    t.deepEqual( addr, { Ok: 'Qmc8zvqELGCBCykoKnFuvLquCsSVNVBN3Lp2eEcJdHNakd' })
+    t.deepEqual( addr, { Ok: 'QmQTYWmk2rY5hQQECHMM8kcjxve3CdYMbXWs62fUP4HZMq' })
 
     // try to log a bad service_log 
     const bad_service_log = {
@@ -181,6 +181,7 @@ scenario('log then list all servicelog', async (s, t) => {
     // Logs a sample request
     const req1 = await app.call('app', "service", "log_request", sample.request1)
     console.log("***DEBUG***: log_request 1: "+JSON.stringify( req1 ))
+    t.ok( req1.Ok, "should have succeeded" )
 
     // Log a first response & service_log
     const addr1 = await app.call('app', "service", "log_response", {
@@ -188,24 +189,28 @@ scenario('log then list all servicelog', async (s, t) => {
 	request_commit: req1.Ok
     })
     console.log("***DEBUG***: log_response 1: "+JSON.stringify( addr1 ))
+    t.ok( addr1.Ok, "should have succeeded" )
 
     const sl_addr1 = await app.call('app', "service", "log_service", sample.service1)
-
+    t.ok( sl_addr1.Ok, "should have succeeded" )
     console.log("***DEBUG***: log_service 1: "+JSON.stringify( sl_addr1 ))
 
     // Log a second response & service_log
     const req2 = await app.call('app', "service", "log_request", sample.request2)
+    t.ok( req2.Ok, "should have succeeded" )
     const addr2 = await app.call('app', "service", "log_response", {
 	...sample.response2,
 	request_commit: req2.Ok
     })
     console.log("***DEBUG***: log_response 2: "+JSON.stringify( addr2 ))
+    t.ok( addr2.Ok, "should have succeeded" )
     const service_log2 = {
 	response_commit: addr2.Ok,
 	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
     const sl_addr2 = await app.call('app', "service", "log_service", sample.service2 )
     console.log("***DEBUG***: log_service 2: "+JSON.stringify( sl_addr2 ))
+    t.ok( sl_addr2.Ok, "should have succeeded" )
 
     const results = await app.call('app', "service", "list_uninvoiced_servicelogs", {})
 

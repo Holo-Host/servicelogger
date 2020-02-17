@@ -85,8 +85,8 @@ fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), 
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct Confirmation {
-    response_hash: Digest,
     client_metrics: ClientMetrics,
+    response_hash: Digest,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
@@ -159,12 +159,12 @@ mod tests {
         let service_log_str = format!(
             r#"{{
   "agent_id": "{}",
-  "response_commit": "Qmc8zvqELGCBCykoKnFuvLquCsSVNVBN3Lp2eEcJdHNakd",
+  "response_commit": "QmQTYWmk2rY5hQQECHMM8kcjxve3CdYMbXWs62fUP4HZMq",
   "confirmation": {{
-    "response_hash": "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv",
     "client_metrics": {{
       "duration": "1.23s"
-    }}
+    }},
+    "response_hash": "QmVtcYog4isPhcurmZxkggnCnoKVdAmb97VZy6Th6aV1xv"
   }},
   "confirmation_signature": "XxHr36xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxCg=="
 }}"#,
