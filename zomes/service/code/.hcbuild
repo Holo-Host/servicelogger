@@ -7,6 +7,36 @@
 	"--release",
         "--target=wasm32-unknown-unknown"
       ]
+    },
+    {
+      "command": "wasm-gc",
+      "arguments": ["../../../target/wasm32-unknown-unknown/release/service.wasm"]
+    },
+    {
+      "command": "wasm-opt",
+      "arguments": [
+        "-Oz",
+        "--vacuum",
+        "../../../target/wasm32-unknown-unknown/release/service.wasm",
+        "-o",
+        "../../../target/wasm32-unknown-unknown/release/service.wasm.opt"
+      ]
+    },
+    {
+      "command": "wasm2wat",
+      "arguments": [
+        "../../../target/wasm32-unknown-unknown/release/service.wasm.opt",
+        "-o",
+        "../../../target/wasm32-unknown-unknown/release/service.wat"
+      ]
+    },
+    {
+      "command": "wat2wasm",
+      "arguments": [
+        "../../../target/wasm32-unknown-unknown/release/service.wat",
+        "-o",
+        "../../../target/wasm32-unknown-unknown/release/service.wasm"
+      ]
     }
   ],
   "artifact": "../../../target/wasm32-unknown-unknown/release/service.wasm"
