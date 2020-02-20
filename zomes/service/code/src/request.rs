@@ -81,9 +81,9 @@ fn validate_request(
             // This Client request must be destined for this Hosting agent!
             if client_request.request.host_id.to_string() != AGENT_ADDRESS.to_string() {
                 return Err(format!(
-                    "Host Agent ID {} doesn't match request: {}",
+                    "Host Agent ID {} doesn't match Host ID in request: {}",
                     AGENT_ADDRESS.to_string(),
-                    serde_json::to_string(&client_request).unwrap_or(String::from(""))
+		    &client_request.request.host_id.to_string()
                 ))
             }
             // The Client Agent must have signed a standard serialization of the request
@@ -93,10 +93,9 @@ fn validate_request(
                 &request_serialization.as_bytes(), &client_request.request_signature
             ) {
                 return Err(format!(
-                    "Signature {} invalid for request: {}",
+                    "Signature {} invalid for request payload: {}",
                     &client_request.request_signature,
-                    serde_json::to_string(&client_request.request).unwrap_or(String::from(""))
-		    // &request_serialization
+		    &request_serialization
                 ))
             };
         } 

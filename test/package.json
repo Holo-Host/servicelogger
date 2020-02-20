@@ -1,9 +1,10 @@
 {
   "dependencies": {
+    "@holo-host/chaperone": "^0.1.5",
     "@holochain/tryorama": "^0.3.1",
-    "json3": "*",
     "faucet": "0.0.1",
-    "tape": "^4.10.1",
-    "json-stable-stringify": "^1.0.1"
+    "json-stable-stringify": "^1.0.1",
+    "json3": "*",
+    "tape": "^4.10.1"
   }
 }

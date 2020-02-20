@@ -66,9 +66,10 @@ dist/%.dna.json:
 
 # End-to-end test of DNA.  Runs a sim2h_server on localhost:9000; the default expected by `hc test`
 test-e2e:	test-dna test-sim2h test-node
-	@echo "Starting Scenario tests..."; \
-	    RUST_BACKTRACE=1 hc test \
-	        | node test/node_modules/faucet/bin/cmd.js
+	@echo "Starting Scenario tests...";
+	RUST_BACKTRACE=1 hc test	\
+		| npx faucet
+#		| grep "MYLOGS"
 
 test-node:
 	@echo "Setting up Scenario/Stress test Javascript..."; \
