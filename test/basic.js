@@ -2,20 +2,63 @@ const { one } = require('./config')
 const util = require('./util')
 const sample = require('./sample')
 const json_stable_stringify = require('json-stable-stringify')
+const crypto = require('crypto')
+
+global.window				= {}; // Bypass bug in Chaperone@0.1.5
+const { Codec, KeyManager } = require("@holo-host/chaperone");
+
+const utf8 = new TextEncoder();
+const log = function(...args) {
+    return console.log("MYLOGS:", ...args);
+}
 
 module.exports = scenario => {
 
+    // Basic agentId check
+    scenario('agentId', async (s, t) => {
+	const { app } = await s.players({app: one('app')}, true)
 
-// Basic agentId check
-scenario('agentId', async (s, t) => {
-    const { app } = await s.players({app: one('app')}, true)
+	t.ok(app.info('app').agentAddress)
+    })
 
-    t.ok(app.info('app').agentAddress)
-})
+    const setup_prefs = {
+	dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
+    }
 
-const setup_prefs = {
-  dna_bundle_hash: "QmfAzihC8RVNLCwtDeeUH8eSAACweFq77KBK4e1bJWmU8A",
-}
+    scenario('log request using real Chaperone input', async (s, t) => {
+	let resp;
+	const { app } = await s.players({app: one('app')}, true);
+
+	var whoami = await app.call('app', "service", "whoami", {});
+	t.deepEqual(util.get( ['Ok', 'dna_name'], whoami ), "ServiceLogger");
+
+	const keys			= new KeyManager( crypto.randomBytes( 32 ) );
+	const client_agent_id		= Codec.AgentId.encode( keys.publicKey() );
+	const request = {
+	    "timestamp": "2020-02-12T21:05:32.021+00:00",
+	    "host_id": "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz",
+	    "call_spec": {
+		"hha_hash": "QmUgZ8e6xE1h9fH89CNqAXFQkkKyRh2Ag6jgTNC8wcoNYS",
+		"dna_alias": "holofuel",
+		"zome": "transactions",
+		"function": "ledger_state",
+		"args_hash": "QmSvPd3sHK7iWgZuW47fyLy4CaZQe2DwxvRhrJ39VpBVMK"
+	    }
+	};
+
+	const sig_bytes			= keys.sign( utf8.encode(json_stable_stringify(request)) );
+	const signature			= Codec.Signature.encode( sig_bytes );
+
+	resp = await app.call('app', "service", "log_request", {
+	    "agent_id": client_agent_id,
+	    "request": request,
+	    "request_signature": signature,
+	});
+
+	log("log_request response:", JSON.stringify(resp) );
+	t.ok( resp.Ok );
+    });
+
 
 // TODO: these are constructed w/ a host_id that *matches* the default one generated for Sim2h Scenario tests,
 // because hdk::sign doesn't allow signing of arbitrary JSON-serialized data (ie. w/ escapes).
@@ -55,7 +98,7 @@ scenario('can log a client request', async (s, t) => {
 
     const addr = await app.call('app', "service", "log_request", sample.request1)
 
-    t.deepEqual(addr, { Ok: 'QmeQbPutRefwE7SRwZrgCZguj5Zn9zYNZiNEZb5Sdb671a' })
+    t.deepEqual(addr, { Ok: 'QmaYjjLKWfr8QTbwx79q55NXxrsfk1HV2CKhPuhjrYyVJa' })
 
     const result = await app.call('app', "service", "get_request", {"address": addr.Ok})
     console.log("***DEBUG***: get_request == " + JSON.stringify( result ));
@@ -79,7 +122,7 @@ scenario('can log a client request', async (s, t) => {
     console.log("***DEBUG***: sig_fail == " + JSON.stringify( host_fail ))
     let host_fail_err = util.get( ['Err', 'Internal'], host_fail )
     console.log("***DEBUG***: host_fail_err == " + JSON.stringify( host_fail_err ))
-    t.ok(host_fail_err && host_fail_err.includes("doesn't match request"),
+    t.ok(host_fail_err && host_fail_err.includes("doesn't match"),
 	 "should generate an 'Host Agent ... doesn't match: " + JSON.stringify( host_fail ))
 
     let request1_bad_sig = {
@@ -149,7 +192,7 @@ scenario('can create a servicelog', async (s, t) => {
 	request_commit: req.Ok
     })
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
-    t.deepEqual( addr, { Ok: 'Qmc8zvqELGCBCykoKnFuvLquCsSVNVBN3Lp2eEcJdHNakd' })
+    t.deepEqual( addr, { Ok: 'QmQTYWmk2rY5hQQECHMM8kcjxve3CdYMbXWs62fUP4HZMq' })
 
     // try to log a bad service_log 
     const bad_service_log = {
@@ -181,6 +224,7 @@ scenario('log then list all servicelog', async (s, t) => {
     // Logs a sample request
     const req1 = await app.call('app', "service", "log_request", sample.request1)
     console.log("***DEBUG***: log_request 1: "+JSON.stringify( req1 ))
+    t.ok( req1.Ok, "should have succeeded" )
 
     // Log a first response & service_log
     const addr1 = await app.call('app', "service", "log_response", {
@@ -188,24 +232,28 @@ scenario('log then list all servicelog', async (s, t) => {
 	request_commit: req1.Ok
     })
     console.log("***DEBUG***: log_response 1: "+JSON.stringify( addr1 ))
+    t.ok( addr1.Ok, "should have succeeded" )
 
     const sl_addr1 = await app.call('app', "service", "log_service", sample.service1)
-
+    t.ok( sl_addr1.Ok, "should have succeeded" )
     console.log("***DEBUG***: log_service 1: "+JSON.stringify( sl_addr1 ))
 
     // Log a second response & service_log
     const req2 = await app.call('app', "service", "log_request", sample.request2)
+    t.ok( req2.Ok, "should have succeeded" )
     const addr2 = await app.call('app', "service", "log_response", {
 	...sample.response2,
 	request_commit: req2.Ok
     })
     console.log("***DEBUG***: log_response 2: "+JSON.stringify( addr2 ))
+    t.ok( addr2.Ok, "should have succeeded" )
     const service_log2 = {
 	response_commit: addr2.Ok,
 	client_signature: "XxHr36lu3RgdvjZZ0cBRxDHwVqWtapemDVzKEEYEOHg1RkYeMShfxZ+RxwcmQnRQYeJFHV/zO8zYw8dNq8r2Cg=="
     }
     const sl_addr2 = await app.call('app', "service", "log_service", sample.service2 )
     console.log("***DEBUG***: log_service 2: "+JSON.stringify( sl_addr2 ))
+    t.ok( sl_addr2.Ok, "should have succeeded" )
 
     const results = await app.call('app', "service", "list_uninvoiced_servicelogs", {})
 

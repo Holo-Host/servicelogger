@@ -43,18 +43,18 @@ pub struct ClientRequest {
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct RequestPayload {
-    timestamp: Iso8601,
-    host_id: Agent,
     call_spec: CallSpec,
+    host_id: Agent,
+    timestamp: Iso8601,
 }
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct CallSpec {
-    pub hha_hash: Digest,
-    pub dna_alias: String,
-    pub zome: String,
-    pub function: String,
     pub args_hash: Digest,
+    pub dna_alias: String,
+    pub function: String,
+    pub hha_hash: Digest,
+    pub zome: String,
 }
 
 pub fn client_request_definition() -> ValidatingEntryType {
@@ -81,9 +81,9 @@ fn validate_request(
             // This Client request must be destined for this Hosting agent!
             if client_request.request.host_id.to_string() != AGENT_ADDRESS.to_string() {
                 return Err(format!(
-                    "Host Agent ID {} doesn't match request: {}",
+                    "Host Agent ID {} doesn't match Host ID in request: {}",
                     AGENT_ADDRESS.to_string(),
-                    serde_json::to_string(&client_request).unwrap_or(String::from(""))
+		    &client_request.request.host_id.to_string()
                 ))
             }
             // The Client Agent must have signed a standard serialization of the request
@@ -93,9 +93,9 @@ fn validate_request(
                 &request_serialization.as_bytes(), &client_request.request_signature
             ) {
                 return Err(format!(
-                    "Signature {} invalid for request: {}",
+                    "Signature {} invalid for request payload: {}",
                     &client_request.request_signature,
-                    serde_json::to_string(&client_request).unwrap_or(String::from(""))
+		    &request_serialization
                 ))
             };
         } 
@@ -185,23 +185,24 @@ mod tests {
             r#"{{
   "agent_id": "{}",
   "request": {{
-    "timestamp": "2019-11-25T05:48:34.123+07:00",
-    "host_id": "{}",
     "call_spec": {{
-      "hha_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+      "args_hash": "{}",
       "dna_alias": "openbook",
-      "zome": "blog",
       "function": "create_post",
-      "args_hash": "{}"
-    }}
+      "hha_hash": "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51",
+      "zome": "blog"
+    }},
+    "host_id": "{}",
+    "timestamp": "2019-11-25T05:48:34.123+07:00"
   }},
   "request_signature": "XxHr36xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxCg=="
 }}"#,
-            agent_id, host_id, args_hash);
+            agent_id, args_hash, host_id);
 
         // Check round-tripping (not a valid request_signature yet, though...)
         //println!("ClientRequest str: {}", &client_request_str);
         let mut client_request: ClientRequest = serde_json::from_str(&client_request_str).unwrap();
+
         assert_eq!( serde_json::to_string_pretty( &client_request ).unwrap(), client_request_str);
 
         let signature = secret_key_exp.sign( serde_json::to_string( &client_request.request ).unwrap().as_bytes(), &public_key );
