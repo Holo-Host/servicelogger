@@ -11,13 +11,13 @@ failure = "0.1.5"
 hcid = "0.0.6"
 hdk = { path = "../../../holochain-rust/crates/hdk" }
 hdk_proc_macros = { path = "../../../holochain-rust/crates/hdk_v2" }
-holochain_json_derive = "=0.0.17"
-holochain_persistence_api = "=0.0.11"
+holochain_json_derive = "=0.0.23"
+holochain_persistence_api = "=0.0.17"
 holochain_wasm_utils = { path = "../../../holochain-rust/crates/wasm_utils" }
-lazy_static = "1.2"
-serde = { version = "=1.0.89", features = ["rc"] }
-serde_derive = "=1.0.89"
-serde_json = { version = "=1.0.39", features = ["preserve_order"] }
+lazy_static = "=1.4.0"
+serde = { version = "=1.0.104", features = ["rc"] }
+serde_derive = "=1.0.104"
+serde_json = { version = "=1.0.47", features = ["preserve_order"] }
 syn = "=0.15.31"
 
 [lib]
