@@ -85,20 +85,27 @@ const logger = {
 const commonConfig = { logger, network }
 
 module.exports = {
-  one: (agent) => Config.gen([{
-    id: 'app',
-    agent: {
-      id: agent,
-      name: `${agent}`,
-      test_agent: true,
-      public_address: "",
-      keystore_file: ""
+    one: (agent) => {
+	const conf = Config.gen([{
+	    id: 'app',
+	    agent: {
+		id: agent,
+		name: `${agent}`,
+		test_agent: true,
+		public_address: "",
+		keystore_file: ""
+	    },
+	    dna: {
+		id: dnaServId,
+		file: dnaServPath,
+	    }
+	}], commonConfig );
+	return async function() {
+	    const genconf = await conf.apply(conf, arguments);
+	    // console.log("DEBUG: Gen config\n", genconf);
+	    return genconf;
+	};
     },
-    dna: {
-      id: dnaServId,
-      file: dnaServPath,
-    }
-  }], commonConfig ),
 
   bri: (agent) => {
     console.log(`bri( ${agent} )`)
