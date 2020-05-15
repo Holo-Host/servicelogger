@@ -64,7 +64,7 @@ async function perform_hosting_setup(conductor, host, fuel) {
 scenario('testing invoice generation', async (s, t) => {
   const { conductor } = await s.players( { conductor: bri('app') }, true )
   const test_name = "***DEBUG***: Multi-DNA Invoice Generation: "
-  
+
   let serv = 'serv'
   let fuel = 'fuel'
   let host = 'host'
@@ -128,11 +128,11 @@ scenario('testing invoice generation', async (s, t) => {
 
   // Check if an invoice should be generated (passed threshold)
   var invoice = await conductor.callSync(serv, "service", "generate_invoice", {})
-  t.deepEqual(invoice, { Ok: 'QmSUFEwAgoopz2t5g1tzBSdMgdwhxef3AyU7a8puDSSxQe' })
+  t.deepEqual(invoice, { Ok: 'QmeWtwG25yko6oUpGW3gAnykbJULwbPw1bbe9P18SpvETb' })
 
   // Now we should have an invoice
   invoices = await conductor.callSync(serv, "service", "list_unpaid_invoices", {})
-  t.deepEqual(invoices, { Ok: [ 'QmSUFEwAgoopz2t5g1tzBSdMgdwhxef3AyU7a8puDSSxQe' ] })
+  t.deepEqual(invoices, { Ok: [ 'QmeWtwG25yko6oUpGW3gAnykbJULwbPw1bbe9P18SpvETb' ] })
 
   // Check that the Invoice notes indicate the source and details of the invoice,
   const earnings = await conductor.callSync(fuel, "transactions", "list_transactions", {
