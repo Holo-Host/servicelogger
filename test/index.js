@@ -16,7 +16,7 @@ process.on('unhandledRejection', error => {
 
 
 const networkType = process.env.APP_SPEC_NETWORK_TYPE || 'sim2h'
-const middleware = 
+const middleware =
   ( networkType === 'websocket'
   ? combine(tapeExecutor(require('tape')), localOnly, callSync)
 
@@ -46,6 +46,9 @@ const orchestrator = new Orchestrator({
 require('./basic')(orchestrator.registerScenario)
 
 require('./bridging')(orchestrator.registerScenario)
+
+require('./traffic')(orchestrator.registerScenario)
+
 
 // Check to see that we haven't accidentally disabled a bunch of scenarios
 const num = orchestrator.numRegistered()
