@@ -3,28 +3,18 @@ use hdk::{
     self,
     entry_definition::ValidatingEntryType,
     error::{ZomeApiError, ZomeApiResult},
-    holochain_persistence_api::{
-        hash::HashString,
-        cas::content::{
-            Address,
-        },
-    },
-    holochain_json_api::{
-        json::JsonString, error::JsonError,
-    },
     holochain_core_types::{
-        entry::Entry,
-        error::HolochainError,
-        dna::entry_types::Sharing,
-        validation::EntryAction,
-        validation::EntryValidationData
+        dna::entry_types::Sharing, entry::Entry, error::HolochainError, validation::EntryAction,
+        validation::EntryValidationData,
     },
+    holochain_json_api::{error::JsonError, json::JsonString},
+    holochain_persistence_api::{cas::content::Address, hash::HashString},
 };
 use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct SetupPrefs {
-    pub dna_bundle_hash: HashString 
+    pub dna_bundle_hash: HashString,
 }
 
 pub fn setup_prefs_definition() -> ValidatingEntryType {
@@ -55,7 +45,7 @@ pub fn get_latest_prefs() -> Option<SetupPrefs> {
             if let Ok(Some(entry)) = hdk::get_entry(&address) {
                 if let Entry::App(_, entry_value) = entry {
                     if let Ok(value) = SetupPrefs::try_from(entry_value.to_owned()) {
-                        return Some(value)
+                        return Some(value);
                     }
                 }
             }
