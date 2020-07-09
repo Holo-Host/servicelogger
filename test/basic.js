@@ -70,7 +70,7 @@ scenario('can log a client request', async (s, t) => {
     var whoami = await app.call('app', "service", "whoami", {})
     console.log("***DEBUG***: whoami == " + JSON.stringify( whoami ));
     t.deepEqual(util.get( ['Ok', 'dna_name'], whoami ), "ServiceLogger")
-    
+
     var setup = await app.call('app', "service", "setup", {"entry": setup_prefs})
     console.log("***DEBUG***: setup == " + JSON.stringify( setup ));
 
@@ -182,7 +182,7 @@ scenario('can create a servicelog', async (s, t) => {
     const { app } = await s.players({app: one('app')}, true)
 
     // performs initial setup
-    await app.call('app', "service", "setup", {"entry": setup_prefs})  
+    await app.call('app', "service", "setup", {"entry": setup_prefs})
 
     // Logs a sample request
     const req = await app.call('app', "service", "log_request", sample.request1)
@@ -194,7 +194,7 @@ scenario('can create a servicelog', async (s, t) => {
     console.log("***DEBUG***: log_response: "+JSON.stringify( addr ))
     t.deepEqual( addr, { Ok: 'QmQTYWmk2rY5hQQECHMM8kcjxve3CdYMbXWs62fUP4HZMq' })
 
-    // try to log a bad service_log 
+    // try to log a bad service_log
     const bad_service_log = {
 	...sample.service1,
 	response_commit: 'QmfaKeADDresStVHEWr4fcQvwCHsfzANYAgPiorBwYKYAq',
@@ -219,7 +219,7 @@ scenario('log then list all servicelog', async (s, t) => {
     const { app } = await s.players({app: one('app')}, true)
 
     // performs initial setup
-    await app.call('app', "service", "setup", {"entry": setup_prefs})  
+    await app.call('app', "service", "setup", {"entry": setup_prefs})
 
     // Logs a sample request
     const req1 = await app.call('app', "service", "log_request", sample.request1)
