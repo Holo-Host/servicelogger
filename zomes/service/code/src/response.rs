@@ -1,33 +1,22 @@
-
 use hdk::{
     self,
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
-    holochain_persistence_api::{
-        cas::content::{
-            Address,
-        },
-    },
-    holochain_json_api::{
-        json::JsonString, error::JsonError,
-    },
     holochain_core_types::{
-        entry::Entry,
-        dna::entry_types::Sharing,
-        validation::EntryValidationData,
-        time::Period,
+        dna::entry_types::Sharing, entry::Entry, time::Period, validation::EntryValidationData,
     },
+    holochain_json_api::{error::JsonError, json::JsonString},
+    holochain_persistence_api::cas::content::Address,
 };
 
 use crate::validate::*; // AgentId, AgentSignature, Digest, ...
-
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct HostResponse {
     pub request_commit: Address,
     pub response_hash: Digest,
     pub host_metrics: HostMetrics,
-    pub entries: Vec<HostEntryMeta>
+    pub entries: Vec<HostEntryMeta>,
 }
 
 pub fn host_response_definition() -> ValidatingEntryType {
@@ -47,22 +36,25 @@ pub fn host_response_definition() -> ValidatingEntryType {
 
 fn validate_response(context: EntryValidationData<HostResponse>) -> Result<(), String> {
     match context {
-        EntryValidationData::Create{entry:host_response,validation_data:_} => match host_response {
+        EntryValidationData::Create {
+            entry: host_response,
+            validation_data: _,
+        } => match host_response {
             // Ensures that the response references an existing request
-            HostResponse { request_commit: hash, .. } => match hdk::get_entry(&hash) {
+            HostResponse {
+                request_commit: hash,
+                ..
+            } => match hdk::get_entry(&hash) {
                 Ok(maybe_entry) => match maybe_entry {
                     Some(_) => Ok(()),
-                    None => Err("ClientRequest entry not found!".to_string())
-                }
-                Err(e) => Err(e.to_string())
+                    None => Err("ClientRequest entry not found!".to_string()),
+                },
+                Err(e) => Err(e.to_string()),
             },
-        }
-        _ => {
-            Err("Failed to validate with wrong entry type".to_string())
-        }
+        },
+        _ => Err("Failed to validate with wrong entry type".to_string()),
     }
 }
-
 
 /// Client Request metrics from the perspective of the Host
 ///
@@ -121,11 +113,17 @@ pub fn handle_log_response(
     request_commit: Address,
     response_hash: Digest,
     host_metrics: HostMetrics,
-    entries: Vec<HostEntryMeta>
+    entries: Vec<HostEntryMeta>,
 ) -> ZomeApiResult<Address> {
     let entry = Entry::App(
         "host_response".into(),
-        HostResponse { request_commit, response_hash, host_metrics, entries }.into()
+        HostResponse {
+            request_commit,
+            response_hash,
+            host_metrics,
+            entries,
+        }
+        .into(),
     );
     let address = hdk::commit_entry(&entry)?;
     Ok(address)
@@ -137,9 +135,10 @@ pub struct HostResponseMeta {
     pub host_response: HostResponse,
 }
 
-pub fn handle_get_response(
-    address: Address
-) -> ZomeApiResult<HostResponseMeta> {
-    let (meta,host_response) = get_meta_and_entry_as_type::<HostResponse>(address)?;
-    Ok(HostResponseMeta { meta, host_response })
+pub fn handle_get_response(address: Address) -> ZomeApiResult<HostResponseMeta> {
+    let (meta, host_response) = get_meta_and_entry_as_type::<HostResponse>(address)?;
+    Ok(HostResponseMeta {
+        meta,
+        host_response,
+    })
 }

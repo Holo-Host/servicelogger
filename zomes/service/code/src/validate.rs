@@ -2,25 +2,24 @@ use ed25519_dalek; // {Signature, PublicKey}
 use failure::Error;
 use hcid::HcidEncoding;
 use lazy_static::lazy_static;
-use serde::{Serialize, Serializer, Deserialize, Deserializer, de, };
-use std::{fmt, str::FromStr, convert::{From, TryFrom, TryInto}, };
+use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
+use std::{
+    convert::{From, TryFrom, TryInto},
+    fmt,
+    str::FromStr,
+};
 
 use hdk::{
-    holochain_persistence_api::{
-        hash::HashString,
-        cas::content::Address,
-    },
-    holochain_json_api::{
-        json::JsonString, error::JsonError,
-    },
-    holochain_wasm_utils::api_serialization::{
-        get_entry::{GetEntryResult, GetEntryOptions, GetEntryResultType},
-    },
     holochain_core_types::{
         entry::{AppEntryValue, Entry},
         error::HolochainError,
         signature::Provenance,
         time::Iso8601,
+    },
+    holochain_json_api::{error::JsonError, json::JsonString},
+    holochain_persistence_api::{cas::content::Address, hash::HashString},
+    holochain_wasm_utils::api_serialization::get_entry::{
+        GetEntryOptions, GetEntryResult, GetEntryResultType,
     },
 };
 
@@ -40,17 +39,11 @@ impl Agent {
     }
 
     #[inline]
-    pub fn from_bytes(
-        bytes: &[u8]
-    ) -> Result<Agent, Error> {
-        Ok(Agent(ed25519_dalek::PublicKey::from_bytes( bytes )?))
+    pub fn from_bytes(bytes: &[u8]) -> Result<Agent, Error> {
+        Ok(Agent(ed25519_dalek::PublicKey::from_bytes(bytes)?))
     }
 
-    pub fn verify(
-        &self,
-        message: &[u8],
-        signature: &AgentSignature,
-    ) -> bool {
+    pub fn verify(&self, message: &[u8], signature: &AgentSignature) -> bool {
         hdk::debug(format!("Verify signature {}", &signature)).ok();
         self.0.verify(message, &signature.0).is_ok()
     }
@@ -93,19 +86,22 @@ impl TryFrom<&str> for Agent {
 
 impl fmt::Display for Agent {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", AGENT_CODEC.encode(&self.to_bytes())
-               .map_err(|_e| std::fmt::Error)?)
+        write!(
+            f,
+            "{}",
+            AGENT_CODEC
+                .encode(&self.to_bytes())
+                .map_err(|_e| std::fmt::Error)?
+        )
     }
 }
 
 impl FromStr for Agent {
     type Err = Error;
     fn from_str(agent_id: &str) -> Result<Self, Self::Err> {
-        Ok(Agent(
-            ed25519_dalek::PublicKey::from_bytes(
-                &AGENT_CODEC.decode(agent_id)?
-            )?
-        ))
+        Ok(Agent(ed25519_dalek::PublicKey::from_bytes(
+            &AGENT_CODEC.decode(agent_id)?,
+        )?))
     }
 }
 
@@ -124,13 +120,9 @@ impl<'d> Deserialize<'d> for Agent {
         D: Deserializer<'d>,
     {
         let agent_id = String::deserialize(deserializer)?; // HcScj...
-        Ok(
-            Agent::from_str(&agent_id)
-                .map_err(de::Error::custom)?
-        )
+        Ok(Agent::from_str(&agent_id).map_err(de::Error::custom)?)
     }
 }
-
 
 /// Takes a holochain Signature(String) in base-64 form, and converts to/from an ed25519 Signature
 #[derive(Debug, Clone, PartialEq)]
@@ -143,10 +135,8 @@ impl AgentSignature {
     }
 
     #[inline]
-    pub fn from_bytes(
-        bytes: &[u8]
-    ) -> Result<AgentSignature, Error> {
-        Ok(AgentSignature(ed25519_dalek::Signature::from_bytes( bytes )?))
+    pub fn from_bytes(bytes: &[u8]) -> Result<AgentSignature, Error> {
+        Ok(AgentSignature(ed25519_dalek::Signature::from_bytes(bytes)?))
     }
 }
 
@@ -189,15 +179,14 @@ impl<'d> Deserialize<'d> for AgentSignature {
         D: Deserializer<'d>,
     {
         let agent_sig = String::deserialize(deserializer)?;
-        AgentSignature::from_str(&agent_sig)
-            .map_err(de::Error::custom)
+        AgentSignature::from_str(&agent_sig).map_err(de::Error::custom)
     }
 }
 
 /// The Client Digest is de/serialized as a base-58 formatted multicodec-prefixed SHA2-256
 /// hash, ie. "Qm...".  This is the "native" form of a HashString, but it is not checked.  Check it
 /// here, and make it available for signature verification.
-/// 
+///
 /// TODO: Much of this should be upstreamed into holochain_persistence; the validation of hashes by
 /// both size and encoding is very common, and Holo / Holochain contains various hashes with various
 /// size and semantic differences, which we should be validating.
@@ -217,23 +206,19 @@ impl Digest {
     }
 
     /// Expects an unencoded SHA2-256 digest; verifies the length of the provided reference
-    pub fn from_bytes(
-        bytes: &[u8]
-    ) -> Result<Digest, Error> {
+    pub fn from_bytes(bytes: &[u8]) -> Result<Digest, Error> {
         if bytes.len() == 32 {
             let mut bits: [u8; 32] = [0u8; 32];
             bits.copy_from_slice(&bytes[..32]);
             Ok(Digest(bits))
         } else {
-            Err(format_err!(
-                "Digest requires a SHA2-256 digest",
-            ))
+            Err(format_err!("Digest requires a SHA2-256 digest",))
         }
     }
 
     pub fn to_vec_encoded(&self) -> Vec<u8> {
         let mut v = vec![0x12_u8, 32];
-        v.extend( self.to_bytes() );
+        v.extend(self.to_bytes());
         v
     }
 }
@@ -241,18 +226,22 @@ impl Digest {
 impl FromStr for Digest {
     type Err = Error;
     fn from_str(request_hash: &str) -> Result<Self, Self::Err> {
-        // A base-58 32-byte SHA2-256 "Qm..." 
+        // A base-58 32-byte SHA2-256 "Qm..."
         let maybe_hash: Result<Vec<u8>, _> = HashString::from(request_hash).try_into();
-        if let Ok(hash_bytes) = maybe_hash { // validates base-58
+        if let Ok(hash_bytes) = maybe_hash {
+            // validates base-58
             if hash_bytes.len() >= 2 // SHA2-256 multicodec prefix
                 && hash_bytes[0] == 0x12_u8
-                && hash_bytes[1] == 32 { // strip prefix, validate size (again)
+                && hash_bytes[1] == 32
+            {
+                // strip prefix, validate size (again)
                 if let Ok(hash) = Digest::from_bytes(&hash_bytes[2..]) {
-                    return Ok(hash)
+                    return Ok(hash);
                 }
             }
         }
-        Err(format_err!( // All failures provide this more informative error message
+        Err(format_err!(
+            // All failures provide this more informative error message
             "Digest requires a multicodec base-58 SHA2-256 digest, found {}",
             request_hash
         ))
@@ -284,9 +273,7 @@ impl Serialize for Digest {
     where
         S: Serializer,
     {
-        serializer.serialize_str(
-            &String::from(HashString::from(self.to_vec_encoded()))
-        )
+        serializer.serialize_str(&String::from(HashString::from(self.to_vec_encoded())))
     }
 }
 
@@ -297,11 +284,9 @@ impl<'d> Deserialize<'d> for Digest {
         D: Deserializer<'d>,
     {
         let hash_str = String::deserialize(deserializer)?;
-        Digest::from_str(&hash_str)
-            .map_err(de::Error::custom)
+        Digest::from_str(&hash_str).map_err(de::Error::custom)
     }
 }
-
 
 /// Partial ChainHeader details for an App Entry entry of type R
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
@@ -313,18 +298,22 @@ pub struct CommitMeta {
 
 /// Get and decode an App Entry type, and return it with some commit metadata
 pub fn get_meta_and_entry_as_type<R: TryFrom<AppEntryValue>>(
-    address: Address
-) -> Result<(CommitMeta,R), HolochainError> {
+    address: Address,
+) -> Result<(CommitMeta, R), HolochainError> {
     let get_result = hdk::get_entry_result(
         &address,
         GetEntryOptions {
             entry: true,
             headers: true,
             ..Default::default()
-        }
+        },
     )?;
-    if let GetEntryResult { result: GetEntryResultType::Single(item)} = get_result {
-        if let Some(Entry::App(_, entry_value)) = item.entry { // None, if nothing found
+    if let GetEntryResult {
+        result: GetEntryResultType::Single(item),
+    } = get_result
+    {
+        if let Some(Entry::App(_, entry_value)) = item.entry {
+            // None, if nothing found
             if let Ok(entry) = R::try_from(entry_value.to_owned()) {
                 if let [header] = item.headers.as_slice() {
                     if let [provenance] = header.provenances().as_slice() {
@@ -333,26 +322,25 @@ pub fn get_meta_and_entry_as_type<R: TryFrom<AppEntryValue>>(
                             provenance: provenance.to_owned(),
                             timestamp: header.timestamp().to_owned(),
                         };
-                        return Ok((commit_meta,entry))
+                        return Ok((commit_meta, entry));
                     }
                 }
             }
             return Err(format!(
                 "No entry of designated type at address {}: {:?}",
                 address, entry_value
-            ).into())
+            )
+            .into());
         }
     }
-    Err(format!(
-        "No entry at address {}", address
-    ).into())
+    Err(format!("No entry at address {}", address).into())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use ed25519_dalek;
     use crate::request::RequestPayload;
+    use ed25519_dalek;
 
     #[test]
     fn client_validate_smoke() {
@@ -373,17 +361,19 @@ mod tests {
         let request_pack: RequestPayload = serde_json::from_str(&request_json).unwrap();
         //println!("{:?}", request_pack);
 
-        let agent_id = AGENT_CODEC.decode("HcSCjUNP6TtxqfdmgeIm3gqhVn7UhvidaAVjyDvNn6km5o3qkJqk9P8nkC9j78i").unwrap();
+        let agent_id = AGENT_CODEC
+            .decode("HcSCjUNP6TtxqfdmgeIm3gqhVn7UhvidaAVjyDvNn6km5o3qkJqk9P8nkC9j78i")
+            .unwrap();
         //println!("{:?}", agent_id);
 
-        let agent_key = ed25519_dalek::PublicKey::from_bytes( &agent_id ).unwrap();
+        let agent_key = ed25519_dalek::PublicKey::from_bytes(&agent_id).unwrap();
         //println!("{:?}", agent_key);
 
         let verified = agent_key.verify(
-            serde_json::to_string( &request_pack ).unwrap().as_bytes(),
-            &ed25519_dalek::Signature::from_bytes( &sig_bytes ).unwrap()
+            serde_json::to_string(&request_pack).unwrap().as_bytes(),
+            &ed25519_dalek::Signature::from_bytes(&sig_bytes).unwrap(),
         );
         //println!("{:?}", verified);
-        assert_eq!( verified, Ok(()) );
+        assert_eq!(verified, Ok(()));
     }
 }
