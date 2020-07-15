@@ -73,6 +73,19 @@ const logger = {
         exclude: true,
         pattern: '.*rpc.*'
       }
+      // ,
+      // {
+      //   exclude: true,
+      //   pattern: '.*holochain_net.*'
+      // },
+      // {
+      //   exclude: true,
+      //   pattern: '.*holochain_net.*'
+      // },
+      // {
+      //   exclude: true,
+      //   pattern: '.*holochain_metrics.*'
+      // }
     ]
   },
   state_dump: true
@@ -128,7 +141,7 @@ module.exports = {
 	id: agent,
 	name: `${agent}`,
 	test_agent: true,
-	public_address: "",
+	public_address: "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz",
 	keystore_file: ""
       },
       dna: {
@@ -151,7 +164,8 @@ module.exports = {
     }], {
       bridges: [
 	Config.bridge('holofuel-bridge', 'serv', 'fuel'),
-	Config.bridge('hosting-bridge',  'serv', 'host')
+  // Removed this bridge to test that all the checks pass and are not dependednt on the HHA
+	// Config.bridge('hosting-bridge',  'serv', 'host')
       ],
       ...commonConfig
     })
