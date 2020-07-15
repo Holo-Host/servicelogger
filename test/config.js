@@ -163,9 +163,9 @@ module.exports = {
       }
     }], {
       bridges: [
-	Config.bridge('holofuel-bridge', 'serv', 'fuel'),
-  // Removed this bridge to test that all the checks pass and are not dependednt on the HHA
-	// Config.bridge('hosting-bridge',  'serv', 'host')
+	       Config.bridge('holofuel-bridge', 'serv', 'fuel'),
+         // Removed this bridge to test that all the checks pass and are not dependent on the HHA
+	       // Config.bridge('hosting-bridge',  'serv', 'host')
       ],
       ...commonConfig
     })

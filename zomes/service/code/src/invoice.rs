@@ -254,12 +254,7 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Option<Address>> {
 
     // TODO: calculate real invoice price
     let outstanding_value = calculate_invoice_price(&logs_list);
-    hdk::debug(format!(
-        "********DEBUG******** HAPP LOGS VALUE {} for {} logs {:?}",
-        &outstanding_value,
-        logs_list.len(),
-        &logs_list
-    ))?;
+    // hdk::debug(format!("********DEBUG******** HAPP LOGS VALUE {} for {} logs {:?}",&outstanding_value,logs_list.len(),&logs_list))?;
 
     // If not enough outstanding value to generate an invoice, return None
     if outstanding_value < prefs.max_fuel_per_invoice {
@@ -292,15 +287,9 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Option<Address>> {
         .into(),
     )?;
 
-    hdk::debug(format!(
-        "********DEBUG******** BRIDGING RAW response from fuel-bridge {:?}",
-        &holofuel_request_raw
-    ))?;
+    // hdk::debug(format!("********DEBUG******** BRIDGING RAW response from fuel-bridge {:?}",&holofuel_request_raw))?;
     let holofuel_request: ZomeApiResult<Address> = holofuel_request_raw.try_into()?;
-    hdk::debug(format!(
-        "********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}",
-        &holofuel_request
-    ))?;
+    // hdk::debug(format!("********DEBUG******** BRIDGING ACTUAL response from fuel-bridge {:?}",&holofuel_request))?;
     let holofuel_address: Address = holofuel_request?;
 
     let entry = Entry::App(
