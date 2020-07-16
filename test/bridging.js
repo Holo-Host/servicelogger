@@ -73,13 +73,13 @@ scenario('testing invoice generation', async (s, t) => {
     let agent_id = conductor.info( agent_name ).agentAddress
     console.log(test_name+`Agent ID of ${agent_name}: ${agent_id}`)
   }
-  const happ_address = await perform_hosting_setup(conductor, host, fuel);
-  t.ok( happ_address )
+  // const happ_address = await perform_hosting_setup(conductor, host, fuel);
+  // t.ok( happ_address )
 
   s.consistency()
 
   const setup_prefs = {
-    dna_bundle_hash: happ_address,
+    dna_bundle_hash: "QmNLei78zWmzUdbeRB3CiUfAizWUrbeeZh5K1rhAQKCh51" //happ_address,
   }
 
   // performs initial setup
@@ -128,11 +128,11 @@ scenario('testing invoice generation', async (s, t) => {
 
   // Check if an invoice should be generated (passed threshold)
   var invoice = await conductor.callSync(serv, "service", "generate_invoice", {})
-  t.deepEqual(invoice, { Ok: 'QmeWtwG25yko6oUpGW3gAnykbJULwbPw1bbe9P18SpvETb' })
+  t.deepEqual(invoice, { Ok: 'QmR4iXQHygR9NCbMJJEA1UYqXZNJuPfcTqdZW7wKhXSzYR' })
 
   // Now we should have an invoice
   invoices = await conductor.callSync(serv, "service", "list_unpaid_invoices", {})
-  t.deepEqual(invoices, { Ok: [ 'QmeWtwG25yko6oUpGW3gAnykbJULwbPw1bbe9P18SpvETb' ] })
+  t.deepEqual(invoices, { Ok: [ 'QmR4iXQHygR9NCbMJJEA1UYqXZNJuPfcTqdZW7wKhXSzYR' ] })
 
   // Check that the Invoice notes indicate the source and details of the invoice,
   const earnings = await conductor.callSync(fuel, "transactions", "list_transactions", {
@@ -144,7 +144,7 @@ scenario('testing invoice generation', async (s, t) => {
   })
   console.log( test_name + `Holo Earning tx list: ` + JSON.stringify( earnings, null, 2 ))
   const notes_json = JSON.parse( util.get( [ 'Ok', 'transactions', 0, 'event', 'Request', 'notes' ], earnings ))
-  t.isEqual( util.get( [ 'Holo_earnings', 'happ_domain' ], notes_json ), "app2.holo.host" )
+  t.isEqual( util.get( [ 'Holo_earnings', 'happ_domain' ], notes_json ), "testfuel.holo.host" )
   t.isEqual( util.get( [ 'Holo_earnings', 'records' ], notes_json ), 2 )
 
 })
