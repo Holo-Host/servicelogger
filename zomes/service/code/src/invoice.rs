@@ -213,7 +213,7 @@ pub fn get_payment_prefs() -> ZomeApiResult<PaymentPref> {
     })
 }
 
-pub fn get_dns_from_hha(_dna_bundle_hash: HashString) -> ZomeApiResult<String> {
+pub fn get_happ_domain_from_hha(_dna_bundle_hash: HashString) -> ZomeApiResult<String> {
     // let happ_domains_raw = hdk::call(
     //     "hosting-bridge",
     //     "provider",
@@ -268,7 +268,7 @@ pub fn handle_generate_invoice() -> ZomeApiResult<Option<Address>> {
     }
 
     // Otherwise, get some details about the hApp for the HoloFuel Invoice notes
-    let happ_domain = get_dns_from_hha(prefs.dna_bundle_hash.clone())?;
+    let happ_domain = get_happ_domain_from_hha(prefs.dna_bundle_hash.clone())?;
 
     // generate the Holo Earnings "invoice"; a HoloFuel Request containing details of the hApp, and
     // the service log records being billed.
