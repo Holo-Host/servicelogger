@@ -10,7 +10,7 @@ use hdk::{
     holochain_json_api::{error::JsonError, json::JsonString},
     holochain_persistence_api::{cas::content::Address, hash::HashString},
     holochain_wasm_utils::api_serialization::query::{QueryArgsOptions, QueryResult},
-    AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PUBLIC_TOKEN,
+    AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME, PROPERTIES, PUBLIC_TOKEN,
 };
 // use std::convert::TryFrom;
 use std::convert::{TryFrom, TryInto};
@@ -54,6 +54,12 @@ pub struct PaymentStatus {
     pub max_unpaid_value: f64,
     pub max_fuel_per_invoice: f64,
     pub situation: HostingSituation,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
+struct Properties {
+    sim2h_url: String,
+    holo_holofuel_address: String,
 }
 
 pub fn invoiced_logs_definition() -> ValidatingEntryType {
@@ -195,11 +201,11 @@ pub fn get_payment_prefs() -> ZomeApiResult<PaymentPref> {
 
     // HARD-CODED: This is hard coded values can be updated with necessary values when we start generating invoices
     // Untill then we do not need these value
+
+    let properties: Properties = PROPERTIES.clone().try_into().unwrap();
     Ok(PaymentPref {
         // Holo-Is-The-Provider So the Hash needs to be valid on deployment if we want to create a valid invoice
-        provider_address: Address::from(
-            "HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz".to_string(),
-        ),
+        provider_address: Address::from(properties.holo_holofuel_address.to_string()),
         dna_bundle_hash,
         max_fuel_per_invoice: 2.0,
         max_unpaid_value: 4.0,
