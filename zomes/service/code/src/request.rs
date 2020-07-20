@@ -9,7 +9,6 @@ use hdk::{
     },
     holochain_json_api::{error::JsonError, json::JsonString},
     holochain_persistence_api::cas::content::Address,
-    AGENT_ADDRESS,
 };
 
 use crate::validate::*; // Agent, AgentSignature, Digest, ...
@@ -67,14 +66,6 @@ fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), S
             entry: client_request,
             validation_data: _,
         } => {
-            // This Client request must be destined for this Hosting agent!
-            if client_request.request.host_id.to_string() != AGENT_ADDRESS.to_string() {
-                return Err(format!(
-                    "Host Agent ID {} doesn't match Host ID in request: {}",
-                    AGENT_ADDRESS.to_string(),
-                    &client_request.request.host_id.to_string()
-                ));
-            }
             // The Client Agent must have signed a standard serialization of the request
             let request_serialization =
                 serde_json::to_string(&client_request.request).map_err(|e| e.to_string())?;

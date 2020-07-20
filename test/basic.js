@@ -122,8 +122,8 @@ scenario('can log a client request', async (s, t) => {
     console.log("***DEBUG***: sig_fail == " + JSON.stringify( host_fail ))
     let host_fail_err = util.get( ['Err', 'Internal'], host_fail )
     console.log("***DEBUG***: host_fail_err == " + JSON.stringify( host_fail_err ))
-    t.ok(host_fail_err && host_fail_err.includes("doesn't match"),
-	 "should generate an 'Host Agent ... doesn't match: " + JSON.stringify( host_fail ))
+    t.ok(host_fail_err && host_fail_err.includes("invalid for request payload"),
+	 "should generate an 'ValidationFailed: " + JSON.stringify( host_fail ))
 
     let request1_bad_sig = {
 	...sample.request1,
