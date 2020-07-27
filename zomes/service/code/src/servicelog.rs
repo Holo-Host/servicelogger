@@ -112,6 +112,7 @@ pub fn handle_get_service(address: Address) -> ZomeApiResult<ServiceLogMeta> {
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct TrafficGraph {
     start_date: Option<Iso8601>,
+    total_zome_calls: u64,
     value: Vec<u64>,
 }
 
@@ -158,11 +159,13 @@ pub fn handle_get_traffic(filter: TrafficFilter) -> ZomeApiResult<TrafficGraph> 
 
         Ok(TrafficGraph {
             start_date: Some(date_array[0].to_owned().clone()),
+            total_zome_calls: value.clone().iter().sum(),
             value,
         })
     } else {
         return Ok(TrafficGraph {
             start_date: None,
+            total_zome_calls: 0,
             value: [].to_vec(),
         });
     }

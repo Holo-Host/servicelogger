@@ -34,8 +34,10 @@ scenario('Test out traffic received by the servicelogger', async (s, t) => {
     let traffic = await app.call('app', "service", "get_traffic", {filter: "SECOND"})
     t.equal(traffic.Ok.value[0], 1)
     t.equal(traffic.Ok.value[1], 1)
+    t.equal(traffic.Ok.total_zome_calls, 2)
     traffic = await app.call('app', "service", "get_traffic", {filter: "HOUR"})
     t.equal(traffic.Ok.value[0], 2)
+    t.equal(traffic.Ok.total_zome_calls, 2)
 
 })
 
