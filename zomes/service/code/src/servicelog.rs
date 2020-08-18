@@ -111,7 +111,8 @@ pub fn handle_get_service(address: Address) -> ZomeApiResult<ServiceLogMeta> {
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct TrafficGraph {
-    start_date: Iso8601,
+    start_date: Option<Iso8601>,
+    total_zome_calls: u64,
     value: Vec<u64>,
 }
 
@@ -137,28 +138,37 @@ pub fn handle_get_traffic(filter: TrafficFilter) -> ZomeApiResult<TrafficGraph> 
         TrafficFilter::HOUR => Period::try_from("1h").unwrap(),
         TrafficFilter::SECOND => Period::try_from("1s").unwrap(),
     };
-    let mut value: Vec<u64> = Vec::new();
-    let mut x = 0;
-    let mut index = 0;
-    let mut initial_date = date_array[0].to_owned().clone();
-    for date in &date_array {
-        let check_date = initial_date + period.clone();
-        if date > &check_date?.to_owned() {
-            value.push(x);
-            // reset
-            x = 1;
-            initial_date = date_array[index].to_owned();
-        } else {
-            x += 1;
+    if !date_array.is_empty() {
+        let mut value: Vec<u64> = Vec::new();
+        let mut x = 0;
+        let mut index = 0;
+        let mut initial_date = date_array[0].to_owned().clone();
+        for date in &date_array {
+            let check_date = initial_date + period.clone();
+            if date > &check_date?.to_owned() {
+                value.push(x);
+                // reset
+                x = 1;
+                initial_date = date_array[index].to_owned();
+            } else {
+                x += 1;
+            }
+            index += 1;
         }
-        index += 1;
-    }
-    value.push(x);
+        value.push(x);
 
-    Ok(TrafficGraph {
-        start_date: date_array[0].to_owned().clone(),
-        value,
-    })
+        Ok(TrafficGraph {
+            start_date: Some(date_array[0].to_owned().clone()),
+            total_zome_calls: value.clone().iter().sum(),
+            value,
+        })
+    } else {
+        return Ok(TrafficGraph {
+            start_date: None,
+            total_zome_calls: 0,
+            value: [].to_vec(),
+        });
+    }
 }
 
 fn handle_get_service_log() -> ZomeApiResult<Vec<Iso8601>> {
@@ -177,7 +187,7 @@ fn handle_get_service_log() -> ZomeApiResult<Vec<Iso8601>> {
             }
             Ok(c)
         }
-        _ => unreachable!(),
+        _ => Ok([].to_vec()),
     }
 }
 
