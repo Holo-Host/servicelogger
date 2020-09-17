@@ -6,8 +6,8 @@ extern crate serde;
 extern crate serde_derive;
 extern crate serde_json;
 
-extern crate holochain_wasm_utils;
 extern crate holochain_persistence_api;
+extern crate holochain_wasm_utils;
 #[macro_use]
 extern crate holochain_json_derive;
 
@@ -15,24 +15,10 @@ extern crate holochain_json_derive;
 extern crate failure;
 
 extern crate hdk_proc_macros;
+use hdk::prelude::*;
 use hdk_proc_macros::zome;
 
-use hdk::{
-    AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME,
-    error::ZomeApiResult,
-    holochain_persistence_api::{
-        cas::content::{
-            Address,
-        },
-    },
-    holochain_json_api::{
-        json::JsonString, error::JsonError,
-    },
-    holochain_core_types::{
-        agent::AgentId,
-    },
-    entry_definition::ValidatingEntryType,
-};
+use hdk::{AGENT_ADDRESS, AGENT_ID_STR, DNA_ADDRESS, DNA_NAME};
 
 use std::convert::TryInto;
 
@@ -83,17 +69,13 @@ pub mod service {
     }
 
     #[zome_fn("hc_public")]
-    fn setup(
-        entry: setup::SetupPrefs
-    ) -> ZomeApiResult<Address> {
+    fn setup(entry: setup::SetupPrefs) -> ZomeApiResult<Address> {
         setup::handle_setup(entry)
     }
 
     /// For testing, we sometimes need to sign arbitrary things, as the Hosting agent
     #[zome_fn("hc_public")]
-    fn sign(
-        payload: String
-    ) -> ZomeApiResult<String> {
+    fn sign(payload: String) -> ZomeApiResult<String> {
         hdk::sign(payload)
     }
 
@@ -104,15 +86,13 @@ pub mod service {
     fn log_request(
         agent_id: validate::Agent,
         request: request::RequestPayload,
-        request_signature: validate::AgentSignature
+        request_signature: validate::AgentSignature,
     ) -> ZomeApiResult<Address> {
         request::handle_log_request(agent_id, request, request_signature)
     }
 
     #[zome_fn("hc_public")]
-    fn get_request(
-        address: Address
-    ) -> ZomeApiResult<request::ClientRequestMeta> {
+    fn get_request(address: Address) -> ZomeApiResult<request::ClientRequestMeta> {
         request::handle_get_request(address)
     }
 
@@ -121,15 +101,13 @@ pub mod service {
         request_commit: Address,
         response_hash: validate::Digest,
         host_metrics: response::HostMetrics,
-        entries: Vec<response::HostEntryMeta>
+        entries: Vec<response::HostEntryMeta>,
     ) -> ZomeApiResult<Address> {
         response::handle_log_response(request_commit, response_hash, host_metrics, entries)
     }
 
     #[zome_fn("hc_public")]
-    fn get_response(
-        address: Address
-    ) -> ZomeApiResult<response::HostResponseMeta> {
+    fn get_response(address: Address) -> ZomeApiResult<response::HostResponseMeta> {
         response::handle_get_response(address)
     }
 
@@ -138,15 +116,18 @@ pub mod service {
         agent_id: validate::Agent,
         response_commit: Address,
         confirmation: servicelog::Confirmation,
-        confirmation_signature: validate::AgentSignature
+        confirmation_signature: validate::AgentSignature,
     ) -> ZomeApiResult<Address> {
-        servicelog::handle_log_service(agent_id, response_commit, confirmation, confirmation_signature)
+        servicelog::handle_log_service(
+            agent_id,
+            response_commit,
+            confirmation,
+            confirmation_signature,
+        )
     }
 
     #[zome_fn("hc_public")]
-    fn get_service(
-        address: Address
-    ) -> ZomeApiResult<servicelog::ServiceLogMeta> {
+    fn get_service(address: Address) -> ZomeApiResult<servicelog::ServiceLogMeta> {
         servicelog::handle_get_service(address)
     }
 
@@ -169,16 +150,21 @@ pub mod service {
     fn get_payment_status() -> ZomeApiResult<invoice::PaymentStatus> {
         invoice::handle_get_payment_status()
     }
+
+    #[zome_fn("hc_public")]
+    fn get_traffic(filter: servicelog::TrafficFilter) -> ZomeApiResult<servicelog::TrafficGraph> {
+        servicelog::handle_get_traffic(filter)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, PartialEq)]
 pub struct WhoamiResult {
-    pub hdk_version:	String,
-    pub hdk_hash:	String,
-    pub dna_address:	String,
-    pub dna_name:	String,
-    pub agent_id:	AgentId,
-    pub agent_address:	String,
+    pub hdk_version: String,
+    pub hdk_hash: String,
+    pub dna_address: String,
+    pub dna_name: String,
+    pub agent_id: AgentId,
+    pub agent_address: String,
 }
 
 pub fn whoami_internal() -> ZomeApiResult<WhoamiResult> {
@@ -196,4 +182,3 @@ pub fn whoami_internal() -> ZomeApiResult<WhoamiResult> {
 pub fn whoami_handler() -> ZomeApiResult<WhoamiResult> {
     whoami_internal()
 }
-

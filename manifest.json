@@ -14,6 +14,7 @@
   "version": "0.6.0",
   "dht": {},
   "properties": {
-    "sim2h_url": "ws://holofuel-hc45.sim2h.net:9001"
+    "sim2h_url": "ws://holofuel-hc45.sim2h.net:9001",
+    "holo_holofuel_address":"HcScJhCTAB58mkeen7oKZrgxga457b69h7fV8A9CTXdTvjdx74fTp33tpcjitgz"
   }
 }
