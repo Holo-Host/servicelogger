@@ -43,11 +43,11 @@ const orchestrator = new Orchestrator({
 
 // Run the various scenerio test packages
 
-require('./basic')(orchestrator.registerScenario)
-
-require('./bridging')(orchestrator.registerScenario)
-
-require('./traffic')(orchestrator.registerScenario)
+// require('./basic')(orchestrator.registerScenario)
+//
+// require('./bridging')(orchestrator.registerScenario)
+//
+// require('./traffic')(orchestrator.registerScenario)
 
 
 // Check to see that we haven't accidentally disabled a bunch of scenarios
