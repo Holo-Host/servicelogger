@@ -1,4 +1,5 @@
-use std::convert::From;
+use ed25519_dalek;
+use std::convert::From; // {Signature, PublicKey}
 
 use hdk::{
     self,
@@ -11,6 +12,7 @@ use hdk::{
     holochain_persistence_api::cas::content::Address,
 };
 
+use crate::validate::AGENT_CODEC;
 use crate::validate::*; // Agent, AgentSignature, Digest, ...
 
 /// ClientRequest represents the start of a unique Client Agent interaction with a Holochain
@@ -23,7 +25,7 @@ use crate::validate::*; // Agent, AgentSignature, Digest, ...
 ///
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct ClientRequest {
-    pub agent_id: Agent,
+    pub agent_id: Address,
     pub request: RequestPayload,
     pub request_signature: AgentSignature,
 }
@@ -69,7 +71,14 @@ fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), S
             // The Client Agent must have signed a standard serialization of the request
             let request_serialization =
                 serde_json::to_string(&client_request.request).map_err(|e| e.to_string())?;
-            if !client_request.agent_id.verify(
+            let agent_id = AGENT_CODEC
+                .decode(&client_request.agent_id.to_string())
+                .unwrap();
+            let agent_key: Agent = ed25519_dalek::PublicKey::from_bytes(&agent_id)
+                .unwrap()
+                .into();
+            // let agent_key: Agent = agent_key;
+            if !agent_key.verify(
                 &request_serialization.as_bytes(),
                 &client_request.request_signature,
             ) {
@@ -85,7 +94,7 @@ fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), S
 }
 
 pub fn handle_log_request(
-    agent_id: Agent,
+    agent_id: Address,
     request: RequestPayload,
     request_signature: AgentSignature,
 ) -> ZomeApiResult<Address> {
