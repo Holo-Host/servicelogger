@@ -31,7 +31,7 @@ pub struct ClientRequest {
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct RequestPayload {
     call_spec: CallSpec,
-    host_id: Agent,
+    host_id: Address,
     timestamp: Iso8601,
 }
 
