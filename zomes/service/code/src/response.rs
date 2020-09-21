@@ -125,8 +125,9 @@ pub fn handle_log_response(
         }
         .into(),
     );
-    let address = hdk::commit_entry(&entry)?;
-    Ok(address)
+    // let address = hdk::commit_entry(&entry)?;
+    // Ok(address)
+    hdk::entry_address(&entry)
 }
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]

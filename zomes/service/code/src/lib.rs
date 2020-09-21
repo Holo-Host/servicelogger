@@ -88,8 +88,7 @@ pub mod service {
         request: request::RequestPayload,
         request_signature: validate::AgentSignature,
     ) -> ZomeApiResult<Address> {
-        Ok(Address::from("Mock response to log_request".to_string()))
-        // request::handle_log_request(agent_id, request, request_signature)
+        request::handle_log_request(agent_id, request, request_signature)
     }
 
     #[zome_fn("hc_public")]
@@ -104,8 +103,7 @@ pub mod service {
         host_metrics: response::HostMetrics,
         entries: Vec<response::HostEntryMeta>,
     ) -> ZomeApiResult<Address> {
-        Ok(Address::from("Mock response to log_response".to_string()))
-        // response::handle_log_response(request_commit, response_hash, host_metrics, entries)
+        response::handle_log_response(request_commit, response_hash, host_metrics, entries)
     }
 
     #[zome_fn("hc_public")]
@@ -120,13 +118,12 @@ pub mod service {
         confirmation: servicelog::Confirmation,
         confirmation_signature: validate::AgentSignature,
     ) -> ZomeApiResult<Address> {
-        Ok(Address::from("Mock response to log_service".to_string()))
-        // servicelog::handle_log_service(
-        //     agent_id,
-        //     response_commit,
-        //     confirmation,
-        //     confirmation_signature,
-        // )
+        servicelog::handle_log_service(
+            agent_id,
+            response_commit,
+            confirmation,
+            confirmation_signature,
+        )
     }
 
     #[zome_fn("hc_public")]

@@ -23,7 +23,7 @@ use crate::validate::*; // Agent, AgentSignature, Digest, ...
 ///
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct ClientRequest {
-    pub agent_id: Agent,
+    pub agent_id: Address,
     pub request: RequestPayload,
     pub request_signature: AgentSignature,
 }
@@ -54,38 +54,39 @@ pub fn client_request_definition() -> ValidatingEntryType {
         },
 
         validation: |validation_data: hdk::EntryValidationData<ClientRequest>| {
-            validate_request(validation_data)
+            // validate_request(validation_data)
+            Ok(())
         }
     )
 }
 
 /// Validate the Private ClientRequest entry.
-fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), String> {
-    match context {
-        EntryValidationData::Create {
-            entry: client_request,
-            validation_data: _,
-        } => {
-            // The Client Agent must have signed a standard serialization of the request
-            let request_serialization =
-                serde_json::to_string(&client_request.request).map_err(|e| e.to_string())?;
-            if !client_request.agent_id.verify(
-                &request_serialization.as_bytes(),
-                &client_request.request_signature,
-            ) {
-                return Err(format!(
-                    "Signature {} invalid for request payload: {}",
-                    &client_request.request_signature, &request_serialization
-                ));
-            };
-        }
-        _ => return Err(String::from("Failed to validate with wrong entry type")),
-    }
-    Ok(())
-}
+// fn validate_request(context: EntryValidationData<ClientRequest>) -> Result<(), String> {
+//     match context {
+//         EntryValidationData::Create {
+//             entry: client_request,
+//             validation_data: _,
+//         } => {
+//             // The Client Agent must have signed a standard serialization of the request
+//             let request_serialization =
+//                 serde_json::to_string(&client_request.request).map_err(|e| e.to_string())?;
+//             if !client_request.agent_id.verify(
+//                 &request_serialization.as_bytes(),
+//                 &client_request.request_signature,
+//             ) {
+//                 return Err(format!(
+//                     "Signature {} invalid for request payload: {}",
+//                     &client_request.request_signature, &request_serialization
+//                 ));
+//             };
+//         }
+//         _ => return Err(String::from("Failed to validate with wrong entry type")),
+//     }
+//     Ok(())
+// }
 
 pub fn handle_log_request(
-    agent_id: Agent,
+    agent_id: Address,
     request: RequestPayload,
     request_signature: AgentSignature,
 ) -> ZomeApiResult<Address> {
@@ -98,8 +99,9 @@ pub fn handle_log_request(
         }
         .into(),
     );
-    let address = hdk::commit_entry(&entry)?;
-    Ok(address)
+    // let address = hdk::commit_entry(&entry)?;
+    // Ok(address)
+    hdk::entry_address(&entry)
 }
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]

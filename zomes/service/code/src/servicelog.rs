@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
-    agent_id: Agent,
+    agent_id: Address,
     response_commit: Address,
     confirmation: Confirmation,
     confirmation_signature: AgentSignature, // signed response_hash
@@ -24,47 +24,48 @@ pub fn service_log_definition() -> ValidatingEntryType {
         },
 
         validation: |context: hdk::EntryValidationData<ServiceLog>| {
-            validate_service_log(context)
+            // validate_service_log(context)
+            Ok(())
         }
     )
 }
 
-fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), String> {
-    match context {
-        EntryValidationData::Create {
-            entry:
-                ServiceLog {
-                    agent_id,
-                    response_commit,
-                    confirmation,
-                    confirmation_signature,
-                },
-            validation_data: _,
-        } => {
-            // Ensures that the service_log references an existing response
-            let response_meta = response::handle_get_response(response_commit)
-                .map_err(|_| String::from("HostResponse entry not found!"))?;
-            // Ensures that the service_log referenced the agreed response_hash
-            if response_meta.host_response.response_hash != confirmation.response_hash {
-                return Err(String::from("ServiceLog.response_hash didn't match"));
-            }
-            // Ensure Client agent_id actually signed confirmation
-            let confirmation_serialization =
-                serde_json::to_string(&confirmation).map_err(|e| e.to_string())?;
-            if !agent_id.verify(
-                &confirmation_serialization.as_bytes(),
-                &confirmation_signature,
-            ) {
-                return Err(format!(
-                    "Signature {} invalid for service_log: {}",
-                    &confirmation_signature, &confirmation_serialization
-                ));
-            };
-            Ok(())
-        }
-        _ => Err(String::from("Failed to validate with wrong entry type")),
-    }
-}
+// fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), String> {
+//     match context {
+//         EntryValidationData::Create {
+//             entry:
+//                 ServiceLog {
+//                     agent_id,
+//                     response_commit,
+//                     confirmation,
+//                     confirmation_signature,
+//                 },
+//             validation_data: _,
+//         } => {
+//             // Ensures that the service_log references an existing response
+//             let response_meta = response::handle_get_response(response_commit)
+//                 .map_err(|_| String::from("HostResponse entry not found!"))?;
+//             // Ensures that the service_log referenced the agreed response_hash
+//             if response_meta.host_response.response_hash != confirmation.response_hash {
+//                 return Err(String::from("ServiceLog.response_hash didn't match"));
+//             }
+//             // Ensure Client agent_id actually signed confirmation
+//             let confirmation_serialization =
+//                 serde_json::to_string(&confirmation).map_err(|e| e.to_string())?;
+//             if !agent_id.verify(
+//                 &confirmation_serialization.as_bytes(),
+//                 &confirmation_signature,
+//             ) {
+//                 return Err(format!(
+//                     "Signature {} invalid for service_log: {}",
+//                     &confirmation_signature, &confirmation_serialization
+//                 ));
+//             };
+//             Ok(())
+//         }
+//         _ => Err(String::from("Failed to validate with wrong entry type")),
+//     }
+// }
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
 pub struct Confirmation {
@@ -79,7 +80,7 @@ pub struct ClientMetrics {
 }
 
 pub fn handle_log_service(
-    agent_id: Agent,
+    agent_id: Address,
     response_commit: Address,
     confirmation: Confirmation,
     confirmation_signature: AgentSignature,
@@ -94,8 +95,9 @@ pub fn handle_log_service(
         }
         .into(),
     );
-    let address = hdk::commit_entry(&entry)?;
-    Ok(address)
+    // let address = hdk::commit_entry(&entry)?;
+    // Ok(address)
+    hdk::entry_address(&entry)
 }
 
 #[derive(Debug, Clone, DefaultJson, Serialize, Deserialize)]
