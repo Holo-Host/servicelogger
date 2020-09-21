@@ -84,7 +84,7 @@ pub mod service {
     /// The `host_id` *must* be that of the committing host for validation to succeed.
     #[zome_fn("hc_public")]
     fn log_request(
-        agent_id: validate::Agent,
+        agent_id: Address,
         request: request::RequestPayload,
         request_signature: validate::AgentSignature,
     ) -> ZomeApiResult<Address> {
@@ -115,7 +115,7 @@ pub mod service {
 
     #[zome_fn("hc_public")]
     fn log_service(
-        agent_id: validate::Agent,
+        agent_id: Address,
         response_commit: Address,
         confirmation: servicelog::Confirmation,
         confirmation_signature: validate::AgentSignature,
