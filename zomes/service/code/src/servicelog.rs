@@ -8,7 +8,7 @@ use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize, Debug, Clone, DefaultJson)]
 pub struct ServiceLog {
-    agent_id: Agent,
+    agent_id: Address,
     response_commit: Address,
     confirmation: Confirmation,
     confirmation_signature: AgentSignature, // signed response_hash
@@ -51,7 +51,13 @@ fn validate_service_log(context: EntryValidationData<ServiceLog>) -> Result<(), 
             // Ensure Client agent_id actually signed confirmation
             let confirmation_serialization =
                 serde_json::to_string(&confirmation).map_err(|e| e.to_string())?;
-            if !agent_id.verify(
+
+            let _agent_id = AGENT_CODEC.decode(&agent_id.to_string()).unwrap();
+            let agent_key: Agent = ed25519_dalek::PublicKey::from_bytes(&_agent_id)
+                .unwrap()
+                .into();
+
+            if !agent_key.verify(
                 &confirmation_serialization.as_bytes(),
                 &confirmation_signature,
             ) {
@@ -79,7 +85,7 @@ pub struct ClientMetrics {
 }
 
 pub fn handle_log_service(
-    agent_id: Agent,
+    agent_id: Address,
     response_commit: Address,
     confirmation: Confirmation,
     confirmation_signature: AgentSignature,

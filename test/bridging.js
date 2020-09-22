@@ -128,11 +128,11 @@ scenario('testing invoice generation', async (s, t) => {
 
   // Check if an invoice should be generated (passed threshold)
   var invoice = await conductor.callSync(serv, "service", "generate_invoice", {})
-  t.deepEqual(invoice, { Ok: 'QmR4iXQHygR9NCbMJJEA1UYqXZNJuPfcTqdZW7wKhXSzYR' })
+  t.deepEqual(invoice, { Ok: 'QmSFBTFg4ayVHJjw7ar9SkJYmmT1uK79zoHqz2YP3PmaLa' })
 
   // Now we should have an invoice
   invoices = await conductor.callSync(serv, "service", "list_unpaid_invoices", {})
-  t.deepEqual(invoices, { Ok: [ 'QmR4iXQHygR9NCbMJJEA1UYqXZNJuPfcTqdZW7wKhXSzYR' ] })
+  t.deepEqual(invoices, { Ok: [ 'QmSFBTFg4ayVHJjw7ar9SkJYmmT1uK79zoHqz2YP3PmaLa' ] })
 
   // Check that the Invoice notes indicate the source and details of the invoice,
   const earnings = await conductor.callSync(fuel, "transactions", "list_transactions", {
